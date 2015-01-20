@@ -21,8 +21,10 @@
 	echo $DEBUG == true ? "Successful" : ""; 
 	
 	
+	if($DEBUG){echo "<p>REQUEST_METHOD: ".$_SERVER['REQUEST_METHOD']."</p>";};
 	
-	if($_SERVER['REQUEST_METHOD'] != 'POST' && $_SERVER['REQUEST_METHOD'] != 'PUT'){
+	
+	if($_SERVER['REQUEST_METHOD'] != 'POST'){
 		exit;
 	}
 	
@@ -32,29 +34,23 @@
 	if($DEBUG){echo "<h3>Returned from Parse.php: </h3>"; var_dump($parsed);};
 
 	$post = $parsed['post'];
-	$post = $parsed['meta'];
+	$meta = $parsed['meta'];
 		
 	if($post != null){
-		
-		
-		// CREATE
-		if($_SERVER['REQUEST_METHOD'] == 'POST'){
-			$wp_error = insertPost($post, $meta);
-			if($DEBUG){echo "<h3>Returned from Wordpress: </h3>"; var_dump($wp_error);};
-			
-		// UPDATE
-		}elseif($_SERVER['REQUEST_METHOD'] == 'PUT'){
-			$wp_error = updatePost($post, $meta);
-			if($DEBUG){echo "<h3>Returned from Wordpress: </h3>"; var_dump($wp_error);};	
-		}
+		$wp_error = insertPost($post, $meta);
+		if($DEBUG){echo "<h3>Returned from Wordpress: </h3>"; var_dump($wp_error);};
 		
 	}
 			
 
+			
+			
+			
+			
 	
 	// Authenticates and returns true if API key matches the provided key.
 	function authentication(){
-		global $API_KEY;
+		global $API_KEY, $DEBUG;
 		
 		if (isset($_GET['key'])) {
 			$USER_KEY = $_GET['key'];
@@ -67,32 +63,60 @@
 		return false;
 	}
 
-
+	
+	
+	
+	// Returns new or existing author ID
+	function insertAuthor(){
+		return null;
+	}
+	
+	// Returns Wordpress Post by NML2-GUID
+	function getPostByGUID($guid){
+		return null;
+	}
+	
 
 	// Inserts the post into the WordPress Database
 	function insertPost($post, $meta){
-		$result = wp_insert_post( $post, true); 
-
-		// if POST_ID was returned & meta data was included
-		if(is_int($result) && $meta != null){
-			$unique = true; // True: No duplicate with matching Meta_key for post_id
-			
-			foreach($meta as $key=>$val){
-				if($key != null && $val != null && strlen($val) > 0){
-					add_post_meta($post_id, $key, $val, $unique);
-				}
-			}
+		global $DEBUG;
+		
+		
+		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
+		if(	getPostByGUID(null) != null){
+			$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
+		}else{
+			$result = wp_insert_post( $post, true); // Creates new post
 		}
 		
 		
-		return $returned;
+		
+		
+		
+		// if POST_ID was returned & meta data was included
+		if(is_numeric($result) && $meta != null){
+			if($DEBUG){echo "<h4>Set metadata in Wordpress: </h4>";};	
+			insertPostMeta($result, $meta);
+		}
+		
+		return $result;
 		
 	}
+	
+	
 
-	// Updates the post in the WordPress Database
-	function updatePost($post, $meta){
-		// Trenger her IDen til artikkelen som skal oppdateres. Den kan hentes med GUID.
-		return wp_update_post( $post, true); 
+	// Inserts or updates meta data for a post
+	function insertPostMeta($post_id, $meta){
+		
+		$unique = true; // True: No duplicate with matching Meta_key for post_id
+		
+		foreach($meta as $key=>$val){
+				
+			if($DEBUG){echo "<br /><strong>Key:</strong> $key  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Value:</strong> $val";};	
+			update_post_meta($result, $key, $val, true);
+				
+		}
+		
 	}
 
 
