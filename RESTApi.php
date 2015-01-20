@@ -27,7 +27,7 @@
 	if($_SERVER['REQUEST_METHOD'] != 'POST'){
 		exit;
 	}
-	
+
 	$postdata = getRequestParams();
 	$parsed = Parse::createPost($postdata);
 	
@@ -73,7 +73,27 @@
 	
 	// Returns Wordpress Post by NML2-GUID
 	function getPostByGUID($guid){
+		global $DEBUG;
+			
+		if($DEBUG){echo "<p><strong>Get post by nml2-guid:</strong> $guid </p>";};	
+		//$the_query = new WP_Query( "post_type=player&meta_key=player_team&meta_value=$teamname&order=ASC" );
+		$the_query = new WP_Query( "post_type=post&meta_key=nml2_guid&meta_value=$guid&order=ASC" );
+		
+		// The Loop
+		if ( $the_query->have_posts() ) {
+			
+			
+			while ( $the_query->have_posts() ) {
+				$the_query->the_post();
+				return get_post();
+				//$the_query->the_post();
+				//echo '<li>' . get_the_title() . '</li>';
+			}
+			
+		}
+		
 		return null;
+
 	}
 	
 
@@ -81,10 +101,26 @@
 	function insertPost($post, $meta){
 		global $DEBUG;
 		
+		if($DEBUG){echo "<br><h2>Insert Post: </h2>";};	
+		
+		
+		$existing_post = getPostByGUID($meta['nml2_guid']);
+		
+		
 		
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
-		if(	getPostByGUID(null) != null){
-			$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
+		if(	$existing_post != null){
+			if($DEBUG){echo "<strong>Found post with ID: </strong> $post_id -> Just update existing" ;};
+			var_dump($existing_post);
+			$version = $meta['nml2_version'];
+			var_dump(get_post_meta( $existing_post->ID, 'nml2_version' ));
+			if($version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){
+				if($DEBUG){echo "<p>UPDATE EXISTING RECORD</p>";};
+				$post['ID'] = $existing_post->ID;
+				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
+			}else{
+				if($DEBUG){echo "<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>";};
+			}
 		}else{
 			$result = wp_insert_post( $post, true); // Creates new post
 		}
@@ -107,13 +143,13 @@
 
 	// Inserts or updates meta data for a post
 	function insertPostMeta($post_id, $meta){
-		
+		global $DEBUG;
 		$unique = true; // True: No duplicate with matching Meta_key for post_id
 		
 		foreach($meta as $key=>$val){
 				
 			if($DEBUG){echo "<br /><strong>Key:</strong> $key  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Value:</strong> $val";};	
-			update_post_meta($result, $key, $val, true);
+			update_post_meta($post_id, $key, $val, true);
 				
 		}
 		
