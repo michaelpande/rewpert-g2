@@ -23,7 +23,7 @@ class Parse {
             'post_content'   => Parse::getPostContent($xpath), // The full text of the post.
             'post_name'      => Parse::getPostSlug($xpath), // The name (slug) for your post
             'post_title'     => Parse::getPostHeadline($xpath), // The title of your post.
-            'post_status'  	 => 'publish',//[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
+            'post_status'  	 => 'publish' //[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
             /*'post_type'      => [ 'post' | 'page' | 'link' | 'nav_menu_item' | custom post type ] // Default 'post'.
             'post_author'    => [ <user ID> ] // The user ID number of the author. Default is the current user ID.
             'ping_status'    => 'closed',// Pingbacks or trackbacks allowed. Default is the option 'default_ping_status'.
@@ -47,7 +47,7 @@ class Parse {
 		$meta = array(
 			'nml2_guid' 		  => Parse::getMetaGuid($xpath),
 			'nml2_version' 		  => Parse::getMetaVersion($xpath),
-			'nml2_firstCreated'   => Parse::
+			'nml2_firstCreated'   => Parse::getMetafirstCreated($xpath),
 			'nml2_versionCreated' => Parse::getMetaVersionCreated($xpath),
 			'nml2_creator'		  => Parse::getMetaCreator($xpath)
 		);
