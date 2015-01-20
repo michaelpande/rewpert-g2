@@ -1,0 +1,34 @@
+#selectedFiles{
+
+    max-height:300px;
+    overflow-y:auto;
+    max-width:600px;
+}
+.not_imported{
+    background-color:;
+    width:100%;
+    color:gray;
+    padding:1em !important;
+}
+
+#selectedFiles tr{
+
+}
+
+#selectedFiles td{
+    height:30px;
+    min-height:30px;
+    max-height:30px;
+    padding:1em !important;
+}
+
+
+.fileText{
+     min-width:100px;
+}
+
+.fileIcon{
+    min-width:50px;
+
+}
+
