@@ -18,6 +18,10 @@ class Parse {
 		
 		//Parse::getPostDate($xpath);
 		
+		/*
+		An array containing infomation aout content, title, and other pysical infomnation
+		that is containd in a NewsML-G2 document
+		*/
         $post = array(
             //'ID'           => [ <post id> ] // Are you updating an existing post?
             'post_content'   => Parse::getPostContent($xpath), // The full text of the post.
@@ -44,6 +48,9 @@ class Parse {
             'page_template'  => [ <string> ] // Requires name of template file, eg template.php. Default empty.*/
         );
 		
+		/*
+		An array containig the metadata of a NewsMØ-G2 document
+		*/
 		$meta = array(
 			'nml2_guid' 		  => Parse::getMetaGuid($xpath),
 			'nml2_version' 		  => Parse::getMetaVersion($xpath),
@@ -52,6 +59,9 @@ class Parse {
 			'nml2_creator'		  => Parse::getMetaCreator($xpath)
 		);
 		
+		/*
+		The array that are sendt to the RESTApi, containing a response mesage, the post array and the meta array
+		*/
 		$returnArray = array(
 			'response' => "ok", //Response message placheholder, when ready update to: Parse::insertArrayCheck($array);
 			'post'     => $post, // The post object created above
@@ -61,7 +71,9 @@ class Parse {
 		return $returnArray;
     }
 
-	
+	/*
+	Retrieving the content from the NewsML-G2 document
+	*/
 	private static function getPostContent($xpath){
 		$content = "";
 		$nodelist = $xpath->query("//html:p");
@@ -169,6 +181,10 @@ class Parse {
 		return $creator;
 	}
 	
+	/*
+	Checking if any of the infomation in the in post_content and post_title are missing
+	and sending a coresponding response
+	*/
 	private static function insertArrayCheck($array) {
 		if($array[ 'post_content' ] == "" and $array[ 'post_title' ] == "") {
 			return false //Placeholder until response messages are ready
