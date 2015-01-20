@@ -47,6 +47,7 @@ class Parse {
 		$meta = array(
 			'nml2_guid' 		  => Parse::getMetaGuid($xpath),
 			'nml2_version' 		  => Parse::getMetaVersion($xpath),
+			'nml2_firstCreated'   => Parse::
 			'nml2_versionCreated' => Parse::getMetaVersionCreated($xpath),
 			'nml2_creator'		  => Parse::getMetaCreator($xpath)
 		);
@@ -131,8 +132,19 @@ class Parse {
 		return $version;
 	}
 	
+	private static function getMetafirstCreated($xpath) {
+		$firstCreated = null;
+		$nodelist = $xpath->query("//newsMessage:firstCreated");
+		
+		foreach($nodelist as $node) {
+			$firstCreated = $node->nodeValue;
+		}
+		
+		return $firstCreated;
+	}
+	
 	private static function getMetaVersionCreated($xpath) {
-		$versionCreated null;
+		$versionCreated = null;
 		$nodelist = $xpath->query("//newsMessage:versionCreated");
 		
 		foreach($nodelist as $node) {
