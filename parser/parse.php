@@ -1,9 +1,9 @@
 <?php
 
-
+include('errorLogger.php');
 class Parse {
 
-
+	
 
 
 
@@ -49,16 +49,32 @@ class Parse {
         );
 		
 		/*
-		An array containig the metadata of a NewsMØ-G2 document
+		An array containig the metadata of a NewsML-G2 document
 		*/
 		$meta = array(
-			'nml2_guid' 		  => Parse::getMetaGuid($xpath),
+			'nml2_guid' 		  => Parse::getMetaGuid($xpath), //string
 			'nml2_version' 		  => Parse::getMetaVersion($xpath),
-			'nml2_firstCreated'   => Parse::getMetafirstCreated($xpath),
+			'nml2_firstCreated'   => Parse::getMetaFirstCreated($xpath),
 			'nml2_versionCreated' => Parse::getMetaVersionCreated($xpath),
-			'nml2_creator'		  => Parse::getMetaCreator($xpath)
+			'nml2_creator'		  => Parse::getMetaCreator($xpath),
+			//'nml2_contributor' 	  => Parse::getMetaContributor($xpath)
 		);
 		
+		/*$userdata = array(
+			'user_login'  =>  //'login_name',
+			'user_url'    =>  //$website,
+			'user_pass'   =>  NULL  // When creating an user, `user_pass` is expected.
+			/*first_name,
+			last_name, 
+			nickname,
+			description,
+			rich_editing,
+			comment_shortcuts,
+			admin_color,
+			use_ssl,
+			show_admin_bar_front*/
+		//);
+
 		/*
 		The array that are sendt to the RESTApi, containing a response mesage, the post array and the meta array
 		*/
@@ -75,7 +91,7 @@ class Parse {
 	Retrieving the content from the NewsML-G2 document
 	*/
 	private static function getPostContent($xpath){
-		$content = "";
+		$content = null;
 		$nodelist = $xpath->query("//html:p");
 		
 		if($nodelist->length == 0) {
@@ -93,7 +109,7 @@ class Parse {
     }
 	
 	private static function getPostHeadline($xpath) {
-		$headline = "";
+		$headline = null;
 		$nodelist = $xpath->query("//newsMessage:headline");
 		
 		if($nodelist->length == 0) {
@@ -113,7 +129,7 @@ class Parse {
 	
 	private static function getPostSlug($xpath) {
 		$nodelist = $xpath->query("//newsMessage:slugline");
-		$slugline = "";
+		$slugline = null;
 	
 		foreach($nodelist as $node) {
 			$slugline = $node->nodeValue;
@@ -144,7 +160,10 @@ class Parse {
 		return $version;
 	}
 	
-	private static function getMetafirstCreated($xpath) {
+	/*
+	Note: this function gives an unchanged string as ansver, not dateTime
+	*/
+	private static function getMetaFirstCreated($xpath) {
 		$firstCreated = null;
 		$nodelist = $xpath->query("//newsMessage:firstCreated");
 		
@@ -155,6 +174,9 @@ class Parse {
 		return $firstCreated;
 	}
 	
+	/*
+	Note: this function gives an unchanged string as ansver, not dateTime
+	*/
 	private static function getMetaVersionCreated($xpath) {
 		$versionCreated = null;
 		$nodelist = $xpath->query("//newsMessage:versionCreated");
@@ -166,12 +188,12 @@ class Parse {
 		return $versonCreated;
 	}
 	
-	public static function getMetaCreator($xpath) {
+	private static function getMetaCreator($xpath) {
 		$creator = null;
 		$nodelist = $xpath->query("//newsMessage:creator/name");
 		
 		if($nodelist->length == 0) {
-			$nodelist = $xpath->query("//newsMessage:creator@literal");
+			$nodelist = $xpath->query("//newsMessage:creator/@literal");
 		}
 		
 		foreach($nodelist as $node) {
@@ -179,24 +201,28 @@ class Parse {
 		}
 		
 		return $creator;
-	}
+	}		
 	
 	/*
 	Checking if any of the infomation in the in post_content and post_title are missing
 	and sending a coresponding response
 	*/
 	private static function insertArrayCheck($array) {
-		if($array[ 'post_content' ] == "" and $array[ 'post_title' ] == "") {
-			return false //Placeholder until response messages are ready
+		if($array[ 'post_content' ] === null and $array[ 'post_title' ] === null) {
+			errorLogger::headerStatus(500);
+			return; 	
 		}
-		else if($array[ 'post_content' ] == "") {
-			return false //Placeholder until response messages are ready
+		else if($array[ 'post_content' ] === null) {
+			errorLogger::HeaderStatus(500);
+			return;
 		}
-		else if($array[ 'post_title' ] == "") {
-			return false //Placeholder until response messages are ready
+		else if($array[ 'post_title' ] === null) {
+			errorLogger::HeaderStatus(500);
+			return;
 		}
 		else {
-			return true //Placeholder until response messages are ready
+			errorLogger:HeaderStatus(200);
+			return;
 		}
 	}
 	
