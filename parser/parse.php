@@ -57,23 +57,8 @@ class Parse {
 			'nml2_firstCreated'   => Parse::getMetaFirstCreated($xpath),
 			'nml2_versionCreated' => Parse::getMetaVersionCreated($xpath),
 			'nml2_creator'		  => Parse::getMetaCreator($xpath),
-			//'nml2_contributor' 	  => Parse::getMetaContributor($xpath)
+			'nml2_contributor' 	  => Parse::getContributers($xpath)
 		);
-		
-		/*$userdata = array(
-			'user_login'  =>  //'login_name',
-			'user_url'    =>  //$website,
-			'user_pass'   =>  NULL  // When creating an user, `user_pass` is expected.
-			/*first_name,
-			last_name, 
-			nickname,
-			description,
-			rich_editing,
-			comment_shortcuts,
-			admin_color,
-			use_ssl,
-			show_admin_bar_front*/
-		//);
 
 		/*
 		The array that are sendt to the RESTApi, containing a response mesage, the post array and the meta array
@@ -97,7 +82,7 @@ class Parse {
 		if($nodelist->length == 0) {
 			$nodelist = $xpath->query("//nitfns:p");
 			if($nodelist->length == 0) {
-			$nodelist = $xpath->query("//inlineData");
+			$nodelist = $xpath->query("//newsMessage:inlineData");
 			}
 		}
 
@@ -185,7 +170,7 @@ class Parse {
 			$versionCreated = $node->nodeValue;
 		}
 		
-		return $versonCreated;
+		return $versionCreated;
 	}
 	
 	private static function getMetaCreator($xpath) {
@@ -240,6 +225,92 @@ class Parse {
 		echo $embargoDate->format('Y-m-d H:i:s');
 		return $embargoDate;
 	}*/
+	
+
+	private static function getContributers($xpath) {
+		$contributers = array("test");
 		
+		$nodelist = $xpath->query("//newsMessage:contributor");
+		
+		if($nodelist->length == 0) {
+			array_push($contributers, "test2");
+			}
+		
+		foreach($nodelist as $node) {
+			array_push($contributers, $node->nodeValue);
+		}
+		
+		/*if($nodelist->length != 0) {
+			foreach($nodelist as $node) {
+				$userdata = array(
+				'user_login'   		 	=> $node->nodeValue, //'login_name',
+				'user_url'     		 	=> "www.placeholder.no", //$website,
+				'user_pass'    		 	=> null,  // When creating an user, `user_pass` is expected.
+				'first_name'   		 	=> null,
+				'last_name'    		 	=> null,
+				'nickname'     		 	=> null,
+				'description'  		 	=> Parse::getUserDescriptionFromLiteral($node->nodeValue),
+				'rich_editing' 		 	=> null,
+				'comment_shortcuts'	 	=> null,
+				'admin_color'		 	=> null,
+				'use_ssl'			 	=> null,
+				'show_admin_bar_front'	=> null
+				);
+				
+				array_push($contributers, $userdata);
+			}
+
+			return $contributers;
+		}
+		
+		$nodelist = $xpath->query("//newsMessage:name");
+		
+		if($nodelist->length == 0) {
+			array_push($contributers, "test");
+		}
+		
+		/*foreach($nodelist as $node) {		
+			$userdata = array(
+				'user_login'   		 	=> str_replace(' ', '', $node->nodeValue), //'login_name',
+				'user_url'     		 	=> "www.placeholder.no", //$website,
+				'user_pass'    		 	=> null,  // When creating an user, `user_pass` is expected.
+				'first_name'   		 	=> $node->nodeValue,
+				'last_name'    		 	=> null,
+				'nickname'     		 	=> null,
+				//'description'  		 	=> Parse::getUserDescriptionFromName($node->nodeValue),
+				'rich_editing' 		 	=> null,
+				'comment_shortcuts'	 	=> null,
+				'admin_color'		 	=> null,
+				'use_ssl'			 	=> null,
+				'show_admin_bar_front'	=> null
+				);
+				
+			array_push($contributers, $userdata);
+		}*/
+		
+		return $contributers;
+	}
+	
+	private static function getUserDescriptionFromLiteral($literal) {
+		$description = null;
+		$nodelist = $xpath->query("//newsMessage:contributor[/@literal=" . $literal);
+		
+		foreach($nodelist as $node) {
+			$description = $node->nodeValue;
+		}
+		
+		return $descroption;
+	}
+	
+	private static function getUserDescriptionFromName($name) {
+		$description = null;
+		$nodelist = $xpath->query("//newsMessage:contributor/name[.=" . $name);
+		
+		foreach($nodelist as $node) {
+			$description = $node->nodeValue;
+		}
+		
+		return $descroption;
+	}
 
 }
