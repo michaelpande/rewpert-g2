@@ -51,11 +51,12 @@
 	// Authenticates and returns true if API key matches the provided key.
 	function authentication(){
 		global $API_KEY, $DEBUG;
+		echo getAPIkey();
 		
 		if (isset($_GET['key'])) {
 			$USER_KEY = $_GET['key'];
 			
-			if($USER_KEY == $API_KEY){
+			if($USER_KEY == getAPIkey()){
 				return true;
 			}
 		
@@ -119,7 +120,7 @@
 				$post['ID'] = $existing_post->ID;
 				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
 			}else{
-				if($DEBUG){echo "<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>";};
+				if($DEBUG){echo "<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>";}; // Array Dereferencing (Requires PHP version > 5.4)
 			}
 		}else{
 			$result = wp_insert_post( $post, true); // Creates new post
@@ -155,8 +156,11 @@
 		
 	}
 
-
-
+	// Returns the API key from the Wordpress Database
+	function getAPIkey(){
+		return get_option("nml2-plugin-api-key");
+		
+	}
 
 
 

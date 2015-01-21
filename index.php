@@ -26,6 +26,7 @@
 	// Adds a menu link to the admin panel in wordpress
 	add_action('admin_menu', 'NewsML_Admin_Menu');
     function newsML_Admin_Menu(){
+		
 	
         // Image path should be set for /images/thumbnail.png
         add_posts_page( "NewsML-G2 Import", "NewsML-G2 REST API", "manage_options", "newsml-g2", "panel_init","/images/thumbnail.png" );
@@ -52,8 +53,6 @@
 
 
     }
-
-
 
 
 
