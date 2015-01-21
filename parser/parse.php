@@ -174,8 +174,58 @@ class Parse {
 	}
 	
 	private static function getMetaCreator($xpath) {
+		$creator = array( );
+		$nodelist = $xpath->query("//newsMessage:creator/newsMessage:name");
+		
+		if($nodelist->length == 0) {
+			foreach($nodelist as $node) {
+				$userdata = array(
+				'user_login'   		 	=> $node->nodeValue, //'login_name',
+				'user_url'     		 	=> "www.placeholder.no", //$website,
+				'user_pass'    		 	=> null,  // When creating an user, `user_pass` is expected.
+				'first_name'   		 	=> $node->nodeValue,
+				'last_name'    		 	=> null,
+				'nickname'     		 	=> null,
+				'description'  		 	=> null,
+				'rich_editing' 		 	=> null,
+				'comment_shortcuts'	 	=> null,
+				'admin_color'		 	=> null,
+				'use_ssl'			 	=> null,
+				'show_admin_bar_front'	=> null
+				);
+				
+				array_push($creator, $userdata);
+				
+				return $creator;
+			}
+			$nodelist = $xpath->query("//newsMessage:creator/@literal");
+		}
+		
+		foreach($nodelist as $node) {
+			$userdata = array(
+				'user_login'   		 	=> $node->nodeValue, //'login_name',
+				'user_url'     		 	=> "www.placeholder.no", //$website,
+				'user_pass'    		 	=> null,  // When creating an user, `user_pass` is expected.
+				'first_name'   		 	=> $node->nodeValue,
+				'last_name'    		 	=> null,
+				'nickname'     		 	=> null,
+				'description'  		 	=> null,
+				'rich_editing' 		 	=> null,
+				'comment_shortcuts'	 	=> null,
+				'admin_color'		 	=> null,
+				'use_ssl'			 	=> null,
+				'show_admin_bar_front'	=> null
+				);
+				
+				array_push($creator, $userdata);
+		}
+		
+		return $creator;
+	}
+	
+	/*private static function getMetaCreator($xpath) {
 		$creator = null;
-		$nodelist = $xpath->query("//newsMessage:creator/name");
+		$nodelist = $xpath->query("//newsMessage:creator/newsMessage:name");
 		
 		if($nodelist->length == 0) {
 			$nodelist = $xpath->query("//newsMessage:creator/@literal");
@@ -186,7 +236,7 @@ class Parse {
 		}
 		
 		return $creator;
-	}		
+	}*/
 	
 	/*
 	Checking if any of the infomation in the in post_content and post_title are missing
@@ -228,28 +278,21 @@ class Parse {
 	
 
 	private static function getContributers($xpath) {
-		$contributers = array("test");
+		$contributers = array( );
 		
-		$nodelist = $xpath->query("//newsMessage:contributor");
+		$nodelist = $xpath->query("//newsMessage:contributor/@literal");
 		
-		if($nodelist->length == 0) {
-			array_push($contributers, "test2");
-			}
 		
-		foreach($nodelist as $node) {
-			array_push($contributers, $node->nodeValue);
-		}
-		
-		/*if($nodelist->length != 0) {
+		if($nodelist->length != 0) {
 			foreach($nodelist as $node) {
 				$userdata = array(
 				'user_login'   		 	=> $node->nodeValue, //'login_name',
 				'user_url'     		 	=> "www.placeholder.no", //$website,
 				'user_pass'    		 	=> null,  // When creating an user, `user_pass` is expected.
-				'first_name'   		 	=> null,
+				'first_name'   		 	=> $node->nodeValue,
 				'last_name'    		 	=> null,
 				'nickname'     		 	=> null,
-				'description'  		 	=> Parse::getUserDescriptionFromLiteral($node->nodeValue),
+				'description'  		 	=> null,
 				'rich_editing' 		 	=> null,
 				'comment_shortcuts'	 	=> null,
 				'admin_color'		 	=> null,
@@ -263,13 +306,9 @@ class Parse {
 			return $contributers;
 		}
 		
-		$nodelist = $xpath->query("//newsMessage:name");
+		$nodelist = $xpath->query("//newsMessage:contributor/newsMessage:name");
 		
-		if($nodelist->length == 0) {
-			array_push($contributers, "test");
-		}
-		
-		/*foreach($nodelist as $node) {		
+		foreach($nodelist as $node) {		
 			$userdata = array(
 				'user_login'   		 	=> str_replace(' ', '', $node->nodeValue), //'login_name',
 				'user_url'     		 	=> "www.placeholder.no", //$website,
@@ -277,7 +316,7 @@ class Parse {
 				'first_name'   		 	=> $node->nodeValue,
 				'last_name'    		 	=> null,
 				'nickname'     		 	=> null,
-				//'description'  		 	=> Parse::getUserDescriptionFromName($node->nodeValue),
+				'description'  		 	=> null,
 				'rich_editing' 		 	=> null,
 				'comment_shortcuts'	 	=> null,
 				'admin_color'		 	=> null,
@@ -286,31 +325,10 @@ class Parse {
 				);
 				
 			array_push($contributers, $userdata);
-		}*/
+		}
 		
 		return $contributers;
 	}
-	
-	private static function getUserDescriptionFromLiteral($literal) {
-		$description = null;
-		$nodelist = $xpath->query("//newsMessage:contributor[/@literal=" . $literal);
-		
-		foreach($nodelist as $node) {
-			$description = $node->nodeValue;
-		}
-		
-		return $descroption;
-	}
-	
-	private static function getUserDescriptionFromName($name) {
-		$description = null;
-		$nodelist = $xpath->query("//newsMessage:contributor/name[.=" . $name);
-		
-		foreach($nodelist as $node) {
-			$description = $node->nodeValue;
-		}
-		
-		return $descroption;
-	}
+
 
 }
