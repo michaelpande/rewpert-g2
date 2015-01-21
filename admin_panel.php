@@ -1,4 +1,42 @@
+<?php
+	
+    // errorLogger.php is our global error logger. It saves the errorlogs to a file.
+    include('/parser/errorLogger.php');
+	
+	if(isset($_POST["NewKey"])){
+		updateAPIkey();
+	}else{
+		createAPIkey();
+	}
+	
+	
+	// Returns the API key from the Wordpress Database
+	function getAPIkey(){
+		if(strlen(get_option("nml2-plugin-api-key")) < 1){
+			return createAPIkey();
+		}
+		return get_option("nml2-plugin-api-key");
+	}
+	
+	// Stores API key in database
+	function createAPIkey(){
+		$key = bin2hex(openssl_random_pseudo_bytes(32));
+		add_option( 'nml2-plugin-api-key', $key, '', 'yes' ); 
+		return $key;
+		//add_option( 'myhack_extraction_length', '255', '', 'yes' ); 
+	}
+	
+	// Stores API key in database
+	function updateAPIkey(){
+		$key = bin2hex(openssl_random_pseudo_bytes(32));
+		update_option( 'nml2-plugin-api-key', $key, '', 'yes' ); 
+		return $key;
+		//add_option( 'myhack_extraction_length', '255', '', 'yes' ); 
+	}
 
+
+
+?> 
 
 
 
@@ -18,7 +56,18 @@
 		<li>Content-Type: <strong>application/xml</strong></li>
 	</ul>
 	<br>
-	<h4>POST the XML directly to the following url:</h4> <input style='width:100%' type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=qibgUASv9D489EL6tDEuNXyH3faoHkvWDxTssIWJhF3UlIGkGlUvGUDoMIPxeGGo' />
+	<h4>POST the XML directly to the following url:</h4> <input style='width:100%' type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
+	
+	<br>
+	
+	<form action="" method="post">
+		<input type="hidden" name="NewKey" value="true" /><br>
+		<input type="submit"  value="Create new API key and update the URL" />
+
+	</form>
+			<p>
+		The API key is generated with openssl_random_pseudo_bytes(32)
+	</p>
 	<br><br>
 	<!--<h2>Examples:</h2>-->
 	<br>
@@ -52,6 +101,7 @@
     <input type="submit" id="startImport" value="Start importing" name="submit" >
 </form>
 
+-->
 
 
 
@@ -59,15 +109,6 @@
 
 
 
-<?php
-	
-    // errorLogger.php is our global error logger. It saves the errorlogs to a file.
-    include('/parser/errorLogger.php');
-
-
-
-
-?> -->
 
 
 

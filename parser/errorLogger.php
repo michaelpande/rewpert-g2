@@ -38,26 +38,41 @@ class errorLogger{
 	public static function headerStatus($statusIn) {
 		$event = $statusIn;
 
-		if($event == 404){
-			header("404 Not Found");
+		if($event == 200){
+			header("OK!");
 		}
-		elseif ($event == 403) {
-			header("403 Forbidden");
+		elseif($event == 201){
+			header("201 Created");
+		}
+		elseif($event == 204){
+			header("204 No Content");
+		}
+		elseif($event == 304){
+			header("304 Not Midified");
+		}
+		elseif($event == 400){
+			header("400 Bad request");
 		}
 		elseif ($event == 401){
 			header("401 Unauthorized");
 		}
+		elseif ($event == 403) {
+			header("403 Forbidden");
+		}
+		elseif($event == 404){
+			header("404 Not Found");
+		}
 		elseif($event == 408){
 			header("408 Request Timeout");
+		}
+		elseif($event == 409){
+			header("409 Conflict");
 		}
 		elseif($event == 500){
 			header("500 Internal Server Error");
 		}
 		elseif($event == 503){
 			header("503 Service Unavailable");
-		}
-		elseif($event == 200){
-			header("OK!");
 		}
 	}
 }
