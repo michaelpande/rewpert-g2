@@ -56,8 +56,9 @@
 		<li>Content-Type: <strong>application/xml</strong></li>
 	</ul>
 	<br>
-	<h4>POST the XML directly to the following url:</h4> <input style='width:100%' type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
 	
+	<h4>POST the XML directly to the following url:</h4> <input style='width:100%' id="url" type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
+	<br><br><label for="debugbox" >Debug</label> <input type="checkbox" name="debugbox" id="debugbox" value="false" />
 	<br>
 	
 	<form action="" method="post">

@@ -1,6 +1,34 @@
 <?php
 
 class errorLogger{
+	
+	
+	
+	
+		//This is to inform the user on the web of errors.
+		//It has not yet been decided if the statusIn is int or string
+		public static function headerStatus($event) {
+			
+			if(headers_sent() || $event == null || !is_numeric($event)){
+				;
+			}
+			switch($event){
+				case 100 : $message = "Continue"; break; 
+				case 201 : $message = "Created"; break;
+				case 204 : $message = "No Content"; break;
+				case 304 : $message = "Not modified"; break;
+				case 400 : $message = "Bad Request"; break;
+				case 401 : $message = "Unauthorized"; break;
+				case 403 : $message = "Forbidden"; break;
+				case 408 : $message = "Request Timeout"; break;
+				case 409 : $message = "Conflict"; break;
+				case 500 : $message = "Internal Server Error"; break;
+				default: $message = "OK"; break;
+			}
+		
+			$HTTP = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+			header($HTTP . ' ' . $event . ' ' . $message);
+	}
 /*
 	//Idea is to call this function when an error happens
 	public static function createAnErrorEntry($errno, $errstr) {
@@ -33,46 +61,6 @@ class errorLogger{
 		fclose($filename);
 	}
 */
-	//This is to inform the user on the web of errors.
-	//It has not yet been decided if the statusIn is int or string
-	public static function headerStatus($statusIn) {
-		$event = $statusIn;
 
-		if($event == 200){
-			header("OK!");
-		}
-		elseif($event == 201){
-			header("201 Created");
-		}
-		elseif($event == 204){
-			header("204 No Content");
-		}
-		elseif($event == 304){
-			header("304 Not Midified");
-		}
-		elseif($event == 400){
-			header("400 Bad request");
-		}
-		elseif ($event == 401){
-			header("401 Unauthorized");
-		}
-		elseif ($event == 403) {
-			header("403 Forbidden");
-		}
-		elseif($event == 404){
-			header("404 Not Found");
-		}
-		elseif($event == 408){
-			header("408 Request Timeout");
-		}
-		elseif($event == 409){
-			header("409 Conflict");
-		}
-		elseif($event == 500){
-			header("500 Internal Server Error");
-		}
-		elseif($event == 503){
-			header("503 Service Unavailable");
-		}
-	}
+
 }

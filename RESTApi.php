@@ -1,21 +1,36 @@
 <?php 
+	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing and var_dumping. 
+	
 	include('parser/parse.php');
 	include('../../../wp-load.php'); // Potentially creates bugs.
+
+	$DEBUG = false;
 	
-	$API_KEY = "qibgUASv9D489EL6tDEuNXyH3faoHkvWDxTssIWJhF3UlIGkGlUvGUDoMIPxeGGo";
-	$DEBUG = true;
+	// POSSIBLE AND KNOWN ISSUES: 
+	// 		Injections on $_GET?
+	//
+	// RESPONSES:
+	// 201: Created // Updated or created new
+	// 409: Conflict // Existing GUID & Version >= Current
+	// 401: Unauthorized // Wrong key
+	// 						(304: Not modified Something went wrong and it was not modified)
+	// 400: Bad request (Something wrong with the NewsML-G2)
+	// 500: Internal Server Error
 	
-	// Injections on $_GET?
+	
 	
 
-	
+	if(isset($_GET["debug"]) && $_GET["debug"] == true){
+		$DEBUG = true;
+	}
 	
 	
 	// Authentication
 	echo $DEBUG == true ? "<h3>Authentication</h3>" : ""; 
+	
 	if(!authentication()){
 		echo $DEBUG == true ? "Failed" : ""; 
-		http_response_code(401);
+		setHeader(401); // Unauthorized
 		exit;
 	}
 	echo $DEBUG == true ? "Successful" : ""; 
@@ -36,7 +51,7 @@
 	$post = $parsed['post'];
 	$meta = $parsed['meta'];
 		
-	if($post != null){
+	if($post != null && $meta != null){
 		$wp_error = insertPost($post, $meta);
 		if($DEBUG){echo "<h3>Returned from Wordpress: </h3>"; var_dump($wp_error);};
 		
@@ -50,8 +65,7 @@
 	
 	// Authenticates and returns true if API key matches the provided key.
 	function authentication(){
-		global $API_KEY, $DEBUG;
-		echo getAPIkey();
+		global $DEBUG;
 		
 		if (isset($_GET['key'])) {
 			$USER_KEY = $_GET['key'];
@@ -112,17 +126,18 @@
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 		if(	$existing_post != null){
 			if($DEBUG){echo "<strong>Found post with ID: </strong> $post_id -> Just update existing" ;};
-			var_dump($existing_post);
+			if($DEBUG){var_dump($existing_post) ;};
 			$version = $meta['nml2_version'];
-			var_dump(get_post_meta( $existing_post->ID, 'nml2_version' ));
 			if($version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){
 				if($DEBUG){echo "<p>UPDATE EXISTING RECORD</p>";};
 				$post['ID'] = $existing_post->ID;
 				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
+				
 			}else{
 				if($DEBUG){echo "<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>";}; // Array Dereferencing (Requires PHP version > 5.4)
 			}
 		}else{
+			
 			$result = wp_insert_post( $post, true); // Creates new post
 		}
 		
@@ -134,6 +149,13 @@
 		if(is_numeric($result) && $meta != null){
 			if($DEBUG){echo "<h4>Set metadata in Wordpress: </h4>";};	
 			insertPostMeta($result, $meta);
+			setHeader(201); // Created
+			
+		}
+		if($result == null){
+			setHeader(409); // Conflict
+		}else if(!is_numeric($result)){
+			setHeader(304); // Not modified
 		}
 		
 		return $result;
@@ -150,7 +172,7 @@
 		foreach($meta as $key=>$val){
 				
 			if($DEBUG){echo "<br /><strong>Key:</strong> $key  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Value:</strong> $val";};	
-			update_post_meta($post_id, $key, $val, true);
+			update_post_meta($post_id, $key, $val);
 				
 		}
 		
@@ -163,6 +185,28 @@
 	}
 
 
+	
+	
+	
+	function setHeader($event){
+		if($event != null){
+			if($event != 200 && $event != 201){
+				errorLogger::headerStatus($event); 
+				exit;
+			}
+			errorLogger::headerStatus($event); 
+			
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 	// Fra Stefan
 	function getRequestParams()
