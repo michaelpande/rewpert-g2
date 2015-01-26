@@ -1,10 +1,34 @@
 $(function(){
-
 	
+	
+	alert("nml2js");
+
 	// Adds event to file input
-	document.getElementById('importedFile').addEventListener('change', readFiles, false);
+	//document.getElementById('importedFile').addEventListener('change', readFiles, false);
 	
+	
+	
+	// Appends / Removes HTTP_GET parameter from URL
+	var url = $("#url").val();
+	
+	$('#debugbox').click(function (e) {
+		
+	   if($('#debugbox').prop('checked')){
+		   $('#url').val(url + "&debug=true");
+		   
+	   }else{
+		   $('#url').val(url);
+		   
+	   }
 
+	});
+	
+});
+
+	
+	
+/*	
+	
     // If user has used the file input dialog
     function readFiles(fileList){
 			
@@ -105,7 +129,7 @@ $(function(){
 			
 			
            
-/*
+
             setTimeout(function(){
                 $('#file'+i).removeClass("not_imported");
                 $('#fileText'+i).html("Successful");
@@ -113,7 +137,7 @@ $(function(){
 
                 // ScrollTo
                 $("#selectedFiles").scrollTop($('#file'+i).height()*i);
-            }, 500*i);*/
+            }, 500*i);
 
 
 
@@ -121,7 +145,7 @@ $(function(){
 
 
             /*$parent = $('#selectedFiles');
-            $parent.scrollTop($parent.scrollTop() + $('file'+i).position().top);*/
+            $parent.scrollTop($parent.scrollTop() + $('file'+i).position().top);
 
 
 	};
@@ -133,7 +157,7 @@ $(function(){
         // 3. IF FAIL -> CHANGE ICON COLOR AND TEXT TO FAIL
 
 
-        /**/
+        
 
 
 
@@ -142,3 +166,4 @@ $(function(){
 
 
 });
+*/

@@ -32,7 +32,7 @@
         add_posts_page( "NewsML-G2 Import", "NewsML-G2 REST API", "manage_options", "newsml-g2", "panel_init","/images/thumbnail.png" );
     }
 
-
+	
     // Initializes the  panel for import
     function panel_init(){
 		
@@ -63,20 +63,21 @@
         wp_enqueue_script('jquery-1112', "//code.jquery.com/jquery-1.11.2.min.js",null,null);
         wp_enqueue_script('jquery-mig', "//code.jquery.com/jquery-migrate-1.2.1.min.js",null,null);
 
+		
+		
 
-
-		wp_enqueue_script('ajaxcomm', getPathToPluginDir() . '/js/ajaxcomm.js',null,null);
+		//wp_enqueue_script('ajaxcomm', getPathToPluginDir() . '/js/ajaxcomm.js',null,null);
         wp_enqueue_script('newsmlg2script', getPathToPluginDir() . '/js/newsmlg2.js',null,null);
 
 
 
         // Sets javascript variables
-        wp_localize_script('newsmlg2script', 'php_vars', array(
+        /*wp_localize_script('newsmlg2script', 'php_vars', array(
                 'plugin_path' => __(getPathToPluginDir()),
 				'wp_ajax' => admin_url( 'admin-ajax.php' )
             )
         );
-		
+		*/
 		
 		
     }
@@ -93,12 +94,12 @@
     // Adds CSS theme through the wordpress API
     function EnqueueStyles() {
 
-        wp_enqueue_style(
+        /*wp_enqueue_style(
             'newsmlg2-plugin',
             getPathToPluginDir() .'theme.css' ,
             null,
             null
-        );
+        );*/
     }
 
 
@@ -110,14 +111,17 @@
     function getPathToPluginDir(){
         define( 'PLUGIN_DIR', dirname(__FILE__).'/' );
 
-
+		
         // Necessary to get the actual URL to plugins in wordpress, instead of wp-admin.
         $current_directory = explode('\\', PLUGIN_DIR);
         $dir = $current_directory[count($current_directory)-1]; // Name of pluginfolder
 
-
-
-        return  WP_PLUGIN_URL .'/'. $dir;
+		$str = WP_PLUGIN_URL .'/'. $dir;
+		
+		
+		$str = str_replace(' ', '%20', $str);
+		
+        return  $str;
 
     }
 
