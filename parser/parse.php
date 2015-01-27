@@ -14,13 +14,17 @@ class Parse {
 		
 		$newsItemList = $xpath->query("//newsMessage:newsItem");
 		
-		$returnArray = array( );
+		$returnArray = array( 
+			'status_code' => 200
+		);
 		
 		foreach($newsItemList as $newsItem) {
 			$newsItemArray = array(
 				'post' => Parse::createPostArray($newsItem, $xpath),
 				'meta' => Parse::createMetaArray($newsItem, $xpath)
 			);
+			
+			$returnArray['status_code'] = Parse::setStatusCode($returnArray, $newsItemArray);
 			
 			array_push($returnArray, $newsItemArray);
 		}
@@ -88,7 +92,7 @@ class Parse {
 		foreach($nodelist as $node) {
             $content = $node->nodeValue;
         }
-
+		
         return $content;
 	}
 	
@@ -118,7 +122,7 @@ class Parse {
 		foreach($nodelist as $node) {
 			$guid = $node->nodeValue;
 		}
-
+		
 		return $guid;
 	}
 	
@@ -161,11 +165,26 @@ class Parse {
 		return $versionCreated;
 	}
 	
-	/*public static function setStatusCode($returnArray) {
-		foreach ($returnArray as $node) {
-			$post = $node->'post';
-			
-			if($post
+	public static function setStatusCode($returnArray, $newsItemArray) {
+		if($returnArray['status_code'] != 200) {
+			return $returnArray['status_code'];
 		}
-	}*/
+		else {
+			if($newsItemArray['post']['post_content'] === null) {
+				return 400;
+			}
+			if($newsItemArray['post']['post_title'] === null) {
+				return 400;
+			}
+			if($newsItemArray['meta']['nml2_guid'] === null) {
+				return 400;
+			}
+			if($newsItemArray['meta']['nml2_version'] === null) {
+				return 400;
+			}
+		}
+		return $returnArray['status_code'];
+		
+	}
+	
 }
