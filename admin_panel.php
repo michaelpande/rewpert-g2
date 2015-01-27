@@ -45,20 +45,23 @@
 
 
 <!-- Import file -->
-<?php echo '<form action="'.htmlspecialchars($_SERVER["PHP_SELF"]).'?page=newsml-g2" method="post" enctype="multipart/form-data">' ?>
+
     
 	<h1>RESTful NewsML-G2</h1><br>
+	
+	
 	<h2>Usage</h2>
-	<ul>
+	<ul class="indent">
 		<li>The API returns <strong>HTTP Status Codes</strong> and <strong>requires authentication</strong>  (API Key)</li>
-		<li>The API key is randomly generated and is part of the URL </li>
-		<li>The key will be <strong>hidden when using SSL</strong></li>
 		<li>Content-Type: <strong>application/xml</strong></li>
 	</ul>
 	<br>
 	
-	<h4>POST the XML directly to the following url:</h4> <input style='width:100%' id="url" type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
-	<br><br><label for="debugbox" >Debug</label> <input type="checkbox" name="debugbox" id="debugbox" value="false" />
+	<?php echo '<form action="'.htmlspecialchars($_SERVER["PHP_SELF"]).'?page=newsml-g2" method="post" enctype="multipart/form-data">' ?>
+	<h4>POST the XML to the following url:</h4> 
+	<label for="debugbox" >Debug</label> <input type="checkbox" name="debugbox" id="debugbox" value="false" /><br><br>
+	<input style='width:100%' id="url" type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
+	<br><br>
 	<br>
 	
 	<form action="" method="post">
@@ -67,10 +70,34 @@
 
 	</form>
 			<p>
-		The API key is generated with openssl_random_pseudo_bytes(32)
+		
 	</p>
 	<br><br>
-	<!--<h2>Examples:</h2>-->
+	
+	<div class="nml2-container">
+	<h2>Quick reference</h2>
+		<div class="nml2-right">
+			<h4>Documentation</h4>
+			<a href="">Documentation</a><br>
+			<a href="">Examples</a><br>
+			<a href="">Source code</a><br>
+		
+		</div>
+		<div class="nml2-right">
+			<h4>Links</h4>
+			<a href="http://www.iptc.org/site/News_Exchange_Formats/NewsML-G2/">IPTC NewsML-G2</a><br>
+			
+			
+		</div>
+	</div>
+	<br><br>
+	<h2>Security</h2>
+	<ul class="indent">
+		<li>The API key will be <strong>hidden when using SSL</strong></li>
+		<li>The API key is generated with openssl_random_pseudo_bytes(32)</li>
+		<li>The API key is stored in the Wordpress Database </li>
+	</ul>
+		<!--<h2>Examples:</h2>-->
 	<br>
 	<pre>
 		

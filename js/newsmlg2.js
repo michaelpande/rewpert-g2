@@ -1,7 +1,5 @@
 $(function(){
 	
-	
-	alert("nml2js");
 
 	// Adds event to file input
 	//document.getElementById('importedFile').addEventListener('change', readFiles, false);
