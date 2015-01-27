@@ -58,7 +58,7 @@
 	<br>
 	
 	<?php echo '<form action="'.htmlspecialchars($_SERVER["PHP_SELF"]).'?page=newsml-g2" method="post" enctype="multipart/form-data">' ?>
-	<h4>POST the XML to the following url:</h4> 
+	<h3>POST the XML to the following url</h3> 
 	<label for="debugbox" >Debug</label> <input type="checkbox" name="debugbox" id="debugbox" value="false" /><br><br>
 	<input style='width:100%' id="url" type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
 	<br><br>

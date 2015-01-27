@@ -48,14 +48,28 @@
 	
 	if($DEBUG){echo "<h3>Returned from Parse.php: </h3>"; var_dump($parsed);};
 
-	$post = $parsed['post'];
-	$meta = $parsed['meta'];
-		
-	if($post != null && $meta != null){
-		$wp_error = insertPost($post, $meta);
-		if($DEBUG){echo "<h3>Returned from Wordpress: </h3>"; var_dump($wp_error);};
-		
+	// If something went wrong during parsing
+	if($parsed['status_code'] != 200){
+		setHeader($parsed['status_code']);
+		exit;
 	}
+
+	// For each NewsItem or similar returned from Parse
+	foreach($parsed as $key => $value){
+		
+		// If nothing went wrong during parsing
+		$post = $value['post'];
+		$meta = $value['meta'];
+			
+		if($post != null && $meta != null){
+			$wp_error = insertPost($post, $meta);
+			if($DEBUG){echo "<h3>Returned from Wordpress: </h3>"; var_dump($wp_error);};
+			
+		}
+	}
+	
+	
+	
 			
 
 			
