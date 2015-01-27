@@ -69,11 +69,12 @@ class Parse {
 	
 	public static function createMetaArray($newsItem, $xpath) {
 		$meta = array(
-			'nml2_guid' 		  => Parse::getMetaGuid($newsItem, $xpath), //string
-			'nml2_version' 		  => Parse::getMetaVersion($newsItem, $xpath),
-			'nml2_firstCreated'   => Parse::getMetaFirstCreated($newsItem, $xpath),
-			'nml2_versionCreated' => Parse::getMetaVersionCreated($newsItem, $xpath),
-			'nml2_embarogDate' 	  => Parse::getMetaEmbargo($newsItem, $xpath)
+			'nml2_guid' 		  	=> Parse::getMetaGuid($newsItem, $xpath), //string
+			'nml2_version' 		  	=> Parse::getMetaVersion($newsItem, $xpath),
+			'nml2_firstCreated'   	=> Parse::getMetaFirstCreated($newsItem, $xpath),
+			'nml2_versionCreated' 	=> Parse::getMetaVersionCreated($newsItem, $xpath),
+			'nml2_embarogDate' 	  	=> Parse::getMetaEmbargo($newsItem, $xpath),
+			'nml2_newsMessageSendt' => Parse::getMetaSendtDate($xpath)
 		);
 		
 		return $meta;
@@ -199,7 +200,17 @@ class Parse {
 		}
 		
 		return $embargo;
+	}
+	
+	public static function getMetaSendtDate($xpath) {
+		$dateSendt = null;
+		$nodelist = $xpath->query("//newsMessage:newsMessage/newsMessage:header/newsMessage:sent");
 		
+		foreach($nodelist as $node) {
+			$dateSendt = $node->nodeValue;
+		}
+		
+		return $dateSendt;
 	}
 	
 	public static function setStatusCode($returnArray, $newsItemArray) {
