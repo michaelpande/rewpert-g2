@@ -6,6 +6,10 @@
 
 	$DEBUG = false;
 	
+	if(isset($_GET["debug"]) && $_GET["debug"] == true){
+		$DEBUG = true;
+	}
+	
 	// POSSIBLE AND KNOWN ISSUES: 
 	// 		Injections on $_GET?
 	//
@@ -13,41 +17,43 @@
 	// 201: Created // Updated or created new
 	// 409: Conflict // Existing GUID & Version >= Current
 	// 401: Unauthorized // Wrong key
-	// 						(304: Not modified Something went wrong and it was not modified)
+	// 						(304: Not modified Something went wrong and it was not modified (no more room in db etc))
 	// 400: Bad request (Something wrong with the NewsML-G2)
 	// 500: Internal Server Error
 	
 	
 	
 
-	if(isset($_GET["debug"]) && $_GET["debug"] == true){
-		$DEBUG = true;
-	}
 	
 	
 	// Authentication
-	echo $DEBUG == true ? "<h3>Authentication</h3>" : ""; 
+	debug("<h3>Authentication</h3>");
 	
 	if(!authentication()){
-		echo $DEBUG == true ? "Failed" : ""; 
+		debug("Failed");
 		setHeader(401); // Unauthorized
 		exit;
 	}
-	echo $DEBUG == true ? "Successful" : ""; 
 	
-	
-	if($DEBUG){echo "<p>REQUEST_METHOD: ".$_SERVER['REQUEST_METHOD']."</p>";};
+	debug("Successful");
+	debug("REQUEST_METHOD: ".$_SERVER['REQUEST_METHOD']);
+
 	
 	
 	if($_SERVER['REQUEST_METHOD'] != 'POST'){
+		debug("The REQUEST_METHOD was not POST");
+		setHeader(400); // Bad Request
 		exit;
 	}
 
+	
 	$postdata = getRequestParams();
 	$parsed = Parse::createPost($postdata);
 	
-	if($DEBUG){echo "<h3>Returned from Parse.php: </h3>"; var_dump($parsed);};
-
+	
+	debug("<h3>Returned from Parse.php: </h3>");
+	debug(var_dump($parsed));
+	
 	// If something went wrong during parsing
 	if($parsed['status_code'] != 200){
 		setHeader($parsed['status_code']);
@@ -63,7 +69,8 @@
 			
 		if($post != null && $meta != null){
 			$wp_error = insertPost($post, $meta);
-			if($DEBUG){echo "<h3>Returned from Wordpress: </h3>"; var_dump($wp_error);};
+			debug("<h3>Returned from Wordpress: </h3>");
+			debug(var_dump($wp_error));
 			
 		}
 	}
@@ -102,11 +109,11 @@
 	
 	// Returns Wordpress Post by NML2-GUID
 	function getPostByGUID($guid){
-		global $DEBUG;
-			
-		if($DEBUG){echo "<p><strong>Get post by nml2-guid:</strong> $guid </p>";};	
-		//$the_query = new WP_Query( "post_type=player&meta_key=player_team&meta_value=$teamname&order=ASC" );
+		
+		debug("<p><strong>Get post by nml2-guid:</strong> $guid </p>");
 		$the_query = new WP_Query( "post_type=post&meta_key=nml2_guid&meta_value=$guid&order=ASC" );
+		
+		
 		
 		// The Loop
 		if ( $the_query->have_posts() ) {
@@ -115,8 +122,6 @@
 			while ( $the_query->have_posts() ) {
 				$the_query->the_post();
 				return get_post();
-				//$the_query->the_post();
-				//echo '<li>' . get_the_title() . '</li>';
 			}
 			
 		}
@@ -128,10 +133,8 @@
 
 	// Inserts the post into the WordPress Database
 	function insertPost($post, $meta){
-		global $DEBUG;
 		
-		if($DEBUG){echo "<br><h2>Insert Post: </h2>";};	
-		
+		debug("<h2>Insert Post: </h2>");
 		
 		$existing_post = getPostByGUID($meta['nml2_guid']);
 		
@@ -139,16 +142,19 @@
 		
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 		if(	$existing_post != null){
-			if($DEBUG){echo "<strong>Found post with ID: </strong> $post_id -> Just update existing" ;};
-			if($DEBUG){var_dump($existing_post) ;};
+			debug("<strong>Found post with ID: </strong> $post_id -> Just update existing");
+			debug(var_dump($existing_post));
+			
 			$version = $meta['nml2_version'];
-			if($version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){
-				if($DEBUG){echo "<p>UPDATE EXISTING RECORD</p>";};
-				$post['ID'] = $existing_post->ID;
+			
+			// Check if imported version is higher than stored. 
+			if($version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){ // Array Dereferencing (Requires PHP version > 5.4)
+				debug("<p>UPDATE EXISTING RECORD</p>");
+				$post['ID'] = $existing_post->ID; 
 				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
 				
 			}else{
-				if($DEBUG){echo "<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>";}; // Array Dereferencing (Requires PHP version > 5.4)
+				debug("<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>"); // Array Dereferencing (Requires PHP version > 5.4)
 			}
 		}else{
 			
@@ -161,7 +167,7 @@
 		
 		// if POST_ID was returned & meta data was included
 		if(is_numeric($result) && $meta != null){
-			if($DEBUG){echo "<h4>Set metadata in Wordpress: </h4>";};	
+			debug("<h4>Set metadata in Wordpress: </h4>");
 			insertPostMeta($result, $meta);
 			setHeader(201); // Created
 			
@@ -180,17 +186,45 @@
 
 	// Inserts or updates meta data for a post
 	function insertPostMeta($post_id, $meta){
-		global $DEBUG;
 		$unique = true; // True: No duplicate with matching Meta_key for post_id
 		
 		foreach($meta as $key=>$val){
-				
-			if($DEBUG){echo "<br /><strong>Key:</strong> $key  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Value:</strong> $val";};	
+			debug("<strong>Key:</strong> $key  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Value:</strong> $val");
 			update_post_meta($post_id, $key, $val);
 				
 		}
 		
 	}
+	
+	
+	// Not implemented yet
+	// Purpose: Sets correct post categories for the post
+	// Challenge: Need array of category IDs from DB.
+	// Solutions: Foreach category string, find or create category id. 
+	function setPostCategories($post_id, $meta){
+		;
+	}
+	
+	// Not implemented yet
+	// Purpose: Convert to the correct dateformat to post_date and post_date_gmt
+	/*function convertDate($post){
+		
+		// [ Y-m-d H:i:s ]
+		if(isset($post['post_date']) && $post['post_date'] != null){
+			$post['post_date'] = getDateFromString($post['post_date']);
+		}
+		if(isset($post['post_date_gmt']) && $post['post_date_gmt'] != null){
+			$post['post_date_gmt'] = getGMTDateFromString($post['post_date_gmt']);
+		}
+		
+	}*/
+	
+	function getDateFromString($str ){
+
+		debug("Format date: " . date('Y-m-d\TH:i:s', $str)->format('Y-m-d'));
+		
+	}
+	
 
 	// Returns the API key from the Wordpress Database
 	function getAPIkey(){
@@ -237,8 +271,13 @@
 	}
 
 
-
-
+	// Simplifies code structure.
+	function debug($str){
+		global $DEBUG;
+		if($DEBUG){
+			echo "<p>".$str."</p>"; // Using <p> to create new lines. 
+		}
+	}
 
 
 
