@@ -25,6 +25,7 @@ class Parse {
 			);
 			
 			$returnArray['status_code'] = Parse::setStatusCode($returnArray, $newsItemArray);
+			$newsItemArray['post']['post_status'] = Parse::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
 			
 			array_push($returnArray, $newsItemArray);
 		}
@@ -40,9 +41,9 @@ class Parse {
         $post = array(
             //'ID'           => [ <post id> ] // Are you updating an existing post?
             'post_content'   => Parse::getPostContent($newsItem, $xpath), // The full text of the post.
-            //'post_name'      => [ 'string' ] // The name (slug) for your post
+            'post_name'      => Parse::getPostName($newsItem, $xpath), // The name (slug) for your post
             'post_title'     => Parse::getPostHeadline($newsItem, $xpath), // The title of your post.
-            'post_status'  	 => 'publish' //[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
+            'post_status'  	 => 'publish', //[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
             /*'post_type'      => [ 'post' | 'page' | 'link' | 'nav_menu_item' | custom post type ] // Default 'post'.
             'post_author'    => [ <user ID> ] // The user ID number of the author. Default is the current user ID.
             'ping_status'    => 'closed',// Pingbacks or trackbacks allowed. Default is the option 'default_ping_status'.
@@ -57,9 +58,9 @@ class Parse {
             'post_date'      => [ Y-m-d H:i:s ] // The time post was made.
             'post_date_gmt'  => [ Y-m-d H:i:s ] // The time post was made, in GMT.
             'comment_status' => [ 'closed' | 'open' ] // Default is the option 'default_comment_status', or 'closed'.
-            'post_category'  => [ array(<category id>, ...) ] // Default empty.
-            'tags_input'     => [ '<tag>, <tag>, ...' | array ] // Default empty.
-            'tax_input'      => [ array( <taxonomy> => <array | string> ) ] // For custom taxonomies. Default empty.
+            'post_category'  => [ array(<category id>, ...) ] // Default empty.*/
+            'tags_input'     => Parse::getPostTags($newsItem, $xpath) // Default empty.
+            /*'tax_input'      => [ array( <taxonomy> => <array | string> ) ] // For custom taxonomies. Default empty.
             'page_template'  => [ <string> ] // Requires name of template file, eg template.php. Default empty.*/
         );
 		
@@ -72,6 +73,7 @@ class Parse {
 			'nml2_version' 		  => Parse::getMetaVersion($newsItem, $xpath),
 			'nml2_firstCreated'   => Parse::getMetaFirstCreated($newsItem, $xpath),
 			'nml2_versionCreated' => Parse::getMetaVersionCreated($newsItem, $xpath),
+			'nml2_embarogDate' 	  => Parse::getMetaEmbargo($newsItem, $xpath)
 		);
 		
 		return $meta;
@@ -113,6 +115,28 @@ class Parse {
 		}
 
 		return $headline;
+	}
+	
+	private static function getPostName($newsItem, $xpath) {
+		$name = null;
+		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:slugline", $newsItem);
+		
+		foreach($nodelist as $node) {
+			$name = $node->nodeValue;
+		}
+		
+		return $name;
+	}
+	
+	private static function getPostTags($newsItem, $xpath) {
+		$tags = null;
+		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:keyword", $newsItem);
+		
+		foreach($nodelist as $node) {
+			$tags .= $node->nodeValue . ",";
+		}
+		
+		return $tags;
 	}
 	
 	private static function getMetaGuid($newsItem, $xpath) {
@@ -165,6 +189,19 @@ class Parse {
 		return $versionCreated;
 	}
 	
+	private static function getMetaEmbargo($newsItem, $xpath) {
+		$embargo = null;
+		
+		$nodelist = $xpath->query("newsMessage:itemMeta/newsMessage:embargoed", $newsItem);
+		
+		foreach($nodelist as $node) {
+			$embargo = $node->nodeValue;
+		}
+		
+		return $embargo;
+		
+	}
+	
 	public static function setStatusCode($returnArray, $newsItemArray) {
 		if($returnArray['status_code'] != 200) {
 			return $returnArray['status_code'];
@@ -184,6 +221,14 @@ class Parse {
 			}
 		}
 		return $returnArray['status_code'];
+		
+	} 
+	
+	public static function setEbargoState($embargo) {
+		if($embargo === null) {
+			return 'publish';
+		}
+		return 'future';
 		
 	}
 	
