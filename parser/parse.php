@@ -18,7 +18,6 @@ class Parse {
 		
 		foreach($newsItemList as $newsItem) {
 			$newsItemArray = array(
-				'status_code' => '',
 				'post' => Parse::createPostArray($newsItem, $xpath),
 				'meta' => Parse::createMetaArray($newsItem, $xpath)
 			);
@@ -161,4 +160,12 @@ class Parse {
 		
 		return $versionCreated;
 	}
+	
+	/*public static function setStatusCode($returnArray) {
+		foreach ($returnArray as $node) {
+			$post = $node->'post';
+			
+			if($post
+		}
+	}*/
 }
