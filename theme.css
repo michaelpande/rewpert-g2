@@ -32,3 +32,39 @@
 
 }
 
+
+#nml2-logo{
+	width:100px;
+	display:inline-block;
+}
+
+.nml2-container{
+	width:100%;
+
+	
+	
+}
+.nml2-left{
+
+	display:block;
+	top:0px;
+	
+}
+.nml2-right{
+	height:100%;
+	display:inline-block;
+	padding-left:20px;
+	top:0px;
+	vertical-align: top; 
+}
+
+form{
+	padding:20px;
+
+	background-color:#E5E5E5;
+	margin-right:20px;
+}
+
+.indent{
+	padding-left:20px;
+}

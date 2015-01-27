@@ -94,12 +94,12 @@
     // Adds CSS theme through the wordpress API
     function EnqueueStyles() {
 
-        /*wp_enqueue_style(
+        wp_enqueue_style(
             'newsmlg2-plugin',
             getPathToPluginDir() .'theme.css' ,
             null,
             null
-        );*/
+        );
     }
 
 
