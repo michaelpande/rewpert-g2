@@ -2,6 +2,7 @@
 	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing and var_dumping. 
 	
 	include('parser/parse.php');
+	include('parser/errorLogger.php');
 	include('../../../wp-load.php'); // Potentially creates bugs.
 
 	$DEBUG = false;
@@ -24,7 +25,6 @@
 	
 	
 
-	
 	
 	// Authentication
 	debug("<h3>Authentication</h3>");
@@ -52,7 +52,7 @@
 	
 	
 	debug("<h3>Returned from Parse.php: </h3>");
-	debug(var_dump($parsed));
+	debug($parsed);
 	
 	// If something went wrong during parsing
 	if($parsed['status_code'] != 200){
@@ -70,7 +70,7 @@
 		if($post != null && $meta != null){
 			$wp_error = insertPost($post, $meta);
 			debug("<h3>Returned from Wordpress: </h3>");
-			debug(var_dump($wp_error));
+			debug($wp_error);
 			
 		}
 	}
@@ -143,7 +143,7 @@
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 		if(	$existing_post != null){
 			debug("<strong>Found post with ID: </strong> $post_id -> Just update existing");
-			debug(var_dump($existing_post));
+			debug($existing_post);
 			
 			$version = $meta['nml2_version'];
 			
@@ -218,13 +218,7 @@
 		}
 		
 	}*/
-	
-	function getDateFromString($str ){
 
-		debug("Format date: " . date('Y-m-d\TH:i:s', $str)->format('Y-m-d'));
-		
-	}
-	
 
 	// Returns the API key from the Wordpress Database
 	function getAPIkey(){
@@ -275,11 +269,13 @@
 	function debug($str){
 		global $DEBUG;
 		if($DEBUG){
-			echo "<p>".$str."</p>"; // Using <p> to create new lines. 
+			if(is_string($str)){
+				echo "<p>".$str."</p>"; // Using <p> to create new lines. 
+			}else{
+				var_dump($str);
+			}
 		}
 	}
-
-
 
 
 
