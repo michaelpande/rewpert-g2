@@ -2,6 +2,7 @@
 	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing and var_dumping. 
 	
 	include('parser/parse.php');
+	include('parser/DateParser.php');
 	include('parser/errorLogger.php');
 	include('../../../wp-load.php'); // Potentially creates bugs.
 
@@ -138,8 +139,10 @@
 		
 		$existing_post = getPostByGUID($meta['nml2_guid']);
 		
-		
-		
+		if(isset($meta['nml2_versionCreated'])){
+			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']);
+			$post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
+		}
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 		if(	$existing_post != null){
 			debug("<strong>Found post with ID: </strong> $post_id -> Just update existing");
