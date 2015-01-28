@@ -22,6 +22,12 @@ class Parse {
 								'nml2_versionCreated' 	=> string
 								'nml2_embarogDate' 	  	=> string
 								'nml2_newsMessageSendt' => string
+								'nml2_subject'			=> $subjects = array(
+															 0 => string
+															 1 => string
+															 2 => string
+															 ...(number of subjects my vary)
+														   );
 							  );
 				 );
 			1 => Same as index 0. This is index, index 0 and alle numbers above is added whit array_push
@@ -121,7 +127,8 @@ class Parse {
 			'nml2_firstCreated'   	=> Parse::getMetaFirstCreated($newsItem, $xpath), //string, the timesap when the newsItem was first created
 			'nml2_versionCreated' 	=> Parse::getMetaVersionCreated($newsItem, $xpath), //string, the timestamp when the curent version of the newsItem var created
 			'nml2_embarogDate' 	  	=> Parse::getMetaEmbargo($newsItem, $xpath), //string, timestamp of the embargo
-			'nml2_newsMessageSendt' => Parse::getMetaSendtDate($xpath) //string
+			'nml2_newsMessageSendt' => Parse::getMetaSendtDate($xpath), //string
+			'nml2_subject' 			=> Parse::getMetaSubjects($newsItem, $xpath) //array
 		);
 		
 		return $meta;
@@ -388,7 +395,7 @@ class Parse {
 	  Parameter: 
 		- $xpath: the XPath variable neded to peform a query on a XML document
 	*/
-	public static function getMetaSendtDate($xpath) {
+	private static function getMetaSendtDate($xpath) {
 		$dateSendt = null;
 		
 		//Path without XML namespace: newsMessage/header/sent
@@ -404,6 +411,48 @@ class Parse {
 		return $dateSendt;
 	}
 	
+	/*A method used to find the subjects in the NewsML article
+	  Returns: array containing subjects, empty array if no subject is found
+	  Parameters: 
+		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
+		- $xpath: the XPath variable neded to peform a query on a XML document
+	*/
+	private static function getMetaSubjects($newsItem, $xpath) {
+		$subjects = array ( );
+		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: contentMeta/subject/@qcode (fetching qcode forom the subject tag)
+		*/
+		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject/@qcode", $newsItem);
+		
+		//eners this loop if any subject is found
+		foreach($nodelist as $node) {
+			
+			/*pushes the value of the subject on the end of the array if the value matches the regula expresion
+			  Exsamples that will pas the regex: subj:11000000, subj:10000000, subj:04007000
+			*/
+			if(preg_match("/subj:[0-9]{8}/", $node->nodeValue)) {
+				array_push($subjects, $node->nodeValue);
+			}
+		}
+		
+		//If noe subject where found in the first query enter this part of the code
+		if(count($subjects) == 0) {
+			
+			/*Query path that continus from first query at the start of the document.
+			  Path without XML namespace: contentMeta/subject/name
+			*/
+			$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject/newsMessage:name", $newsItem);
+			
+			//Pushes the subjects found in the query on to the end of the array
+			foreach($nodelist as $node) {
+				array_push($subjects, $node->nodeValue);
+			}
+		}
+		
+		return $subjects;
+	}
+	
 	/*A metod that goes through the vital part of the data that has bean colected frome the NewsML document
 	  Returns: status code as in. 200 if everthing is OK, 400  if shoething is missing or the curent 
 			   status code if it is not 200
@@ -411,7 +460,7 @@ class Parse {
 		- $returnArray: array containing the data gatherd from the NewsML document
 		- $newsItemArray: array containing the status code to check what it is curently set to
 	*/
-	public static function setStatusCode($returnArray, $newsItemArray) {
+	private static function setStatusCode($returnArray, $newsItemArray) {
 		if($returnArray['status_code'] != 200) {
 			return $returnArray['status_code'];
 		}
