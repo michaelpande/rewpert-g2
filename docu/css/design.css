@@ -7,7 +7,7 @@ head{
 body {
   background: #f3f3f3;
   padding: 0;
-  text-align: center;
+  text-align: left;
   font-family: 'open sans';
   position: relative;
   margin: 0;
@@ -116,6 +116,7 @@ pre code {
   line-height: 100%;
   padding: 0.7em;
   text-decoration: none;
+  text-align: center;
   color: #fff;
   width: 100px;
   line-height: 140%;
@@ -227,4 +228,8 @@ pre code {
 .other h1 {
   font-size: 46px;
   margin-bottom: 20px;
+}
+
+.headertitle{
+  text-align: center;
 }
