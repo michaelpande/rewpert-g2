@@ -33,6 +33,7 @@ class Parse {
 															'nml2_uri'	  => string
 														  );
 													1 => Same as the index above. Number of indexes dependes on number of creators
+													);
 								'contributors' => $contributor = array(
 													0 => $user array(
 															'user_login'  => string
@@ -43,6 +44,38 @@ class Parse {
 													1 => Same as the index above. Number of indexes dependes on number of contributors
 													);
 							   );
+					'subjects' => $subjects = array(
+									0 => subject = array(
+											'qcode'  => string
+											'name' 	 => $nameArray = array(
+														0 => name = array(
+																'text' => string
+																'lang' => string
+																'role' => string
+															 );
+														1 => Same as the index above. Number of indexes depends on number of names
+														);
+											'type' 	 => string
+											'uri' 	 => string
+											'sameAs' => $sameAsArray = array(
+														0 => sameAs = array(
+															'qcode'  => string
+															'name' 	 => $nameArray = array(
+																0 => name = array(
+																	'text' => string
+																	'lang' => string
+																	'role' => string
+																	 );
+																1 => Same as the index above. Number of indexes depends on number of names
+																	);
+															'type' 	 => string
+															'uri' 	 => string
+															);
+														1 => same as the index above. Number of indexes depends on number of sameAs tags under a subjects
+														);
+										);
+									1 => same as the index above. Number of indexes depends on number of subjects
+									);
 				 );
 			1 => Same as index 0. This is index, index 0 and alle numbers above is added whit array_push
 				 and the index numbers used is decidded by the numbers of newsItems
@@ -80,9 +113,10 @@ class Parse {
 		
 		foreach($newsItemList as $newsItem) {
 			$newsItemArray = array(
-				'post'  => Parse::createPostArray($newsItem, $xpath),
-				'meta'  => Parse::createMetaArray($newsItem, $xpath),
-				'users' => Parse::createUserArray($newsItem, $xpath)
+				'post'  	=> Parse::createPostArray($newsItem, $xpath),
+				'meta'  	=> Parse::createMetaArray($newsItem, $xpath),
+				'users' 	=> Parse::createUserArray($newsItem, $xpath),
+				'subjects' 	=> Parse::createSubjectArray($newsItem, $xpath)
 			);
 			
 			//Cheking if there is anny errors in the data gathert from the newsML document and chenges status code accordingly
@@ -328,6 +362,12 @@ class Parse {
 		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
 		- $xpath: the XPath variable neded to peform a query on a XML document
 	*/
+	
+	/**
+	 * Find and returns the version number
+	 *
+	 * This metod user DOMEXPath query to find and return the version number of the newsItem given in a NewsML-G2 document
+	 */
 	private static function getMetaVersion($newsItem, $xpath) {
 		$version = null;
 		
@@ -345,14 +385,18 @@ class Parse {
 		
 		return $version;
 	}
-	
-	/*A metod used to find the timestamp frome when the news articel where first created
-	  This metod does not change the timestamp in any way, just fetches it from the XML and send it ot the RESTapi
-	  Returns: timestamp as string, null if no firstCreated tag found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
+
+	/**
+	 * Finds and returns a timestamp from when the news articel was first creaded
+	 *
+	 * This metod uses a DOMXPath query to find and return a timestamp from when the first version of the NewsML-G2
+	 * document where created
+	 *
+	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string first created timestamp, null of no timestamp is present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getMetaFirstCreated($newsItem, $xpath) {
 		$firstCreated = null;
 		
@@ -371,19 +415,16 @@ class Parse {
 		return $firstCreated;
 	}
 	
-	/*A metod used to find the timestamp frome when the curent version of the news articel where created
-	  This metod does not change the timestamp in any way, just fetches it from the XML and send it ot the RESTapi
-	  Returns: timestamp as string, null if no versionCreated tag found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
-	
 	/**
-	 * Findes and returns timestamp from when the present version where created
+	 * Findes and returns a timestamp from when the present version was created
 	 *
 	 * This metod uses a DOMXPath query to find and return a timestamp from when the curent version of the NewsML-G2
 	 * document where created
+	 *
+	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string versioin created timestamp, null of no timestamp is present
+	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaVersionCreated($newsItem, $xpath) {
 		$versionCreated = null;
@@ -408,9 +449,10 @@ class Parse {
 	 *
 	 * This metod user DOMXPath query to find the embargo date of a NewsML-G2 Docuemtn and reutrns it as a string
 	 *
-	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed eon
+	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return string embargo date, null of no embargo i present
+	 * @return string embargo date, null of no embargo is present
+	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaEmbargo($newsItem, $xpath) {
 		$embargo = null;
@@ -437,7 +479,7 @@ class Parse {
 	 * find the tag
 	 *
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return string Date sent, null if no date is present
+	 * @return string date sent timestamp, null if no date is present
 	 * @author Petter Lundberg Olsen
 	 */ 
 	private static function getMetaSentDate($xpath) {
@@ -461,7 +503,7 @@ class Parse {
 	 *
 	 * This metod findes the laguage of the content in a NewsML-G2 docuemnt using DOMXPath and returns it as a string
 	 *
-	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed eon
+	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return string The laguage of the news articel
 	 * @author Petter Lundberg Olsen
@@ -487,7 +529,7 @@ class Parse {
 			$user = array(
 				'user_login' 	=> Parse::getUserName($node, $xpath),
 				'description'	=> Parse::getUserDescription($node, $xpath),
-				'nml2_qcode'		=> Parse::getUserQcode($node, $xpath),
+				'nml2_qcode'	=> Parse::getUserQcode($node, $xpath),
 				'nml2_uri'		=> Parse::getUserUri($node, $xpath)
 			);
 
@@ -567,46 +609,124 @@ class Parse {
 		
 		return $uri;
 	}
-		
-		
 	
-	/*A method used to find the subjects in the NewsML article
-	  Returns: array containing subjects, empty array if no subject is found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
-	private static function getMetaSubjects($newsItem, $xpath) {
-		$subjects = array ( );
+	private static function createSubjectArray($newsItem, $xpath) {
+		$subjects = array( );
 		
-		/*Query path that continus from first query at the start of the document.
-		  Path without XML namespace: contentMeta/subject/name
-		*/
-		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject/newsMessage:name", $newsItem);
+		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject", $newsItem);
 		
-		//Pushes the subjects found in the query on to the end of the array
 		foreach($nodelist as $node) {
-			array_push($subjects, $node->nodeValue);
-		}
-
-		
-		//If noe subject where found in the first query enter this part of the code
-		if(count($subjects) == 0) {
-		
-			/*Query path that continus from first query at the start of the document.
-			  Path without XML namespace: contentMeta/subject/@qcode (fetching qcode forom the subject tag)
-			*/
-			$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject/@qcode", $newsItem);
+			$subject = array(
+				'qcode'  => Parse::getSubjectQcode($node, $xpath),
+				'name' 	 => Parse::getSubjectName($node, $xpath),
+				'type' 	 => Parse::getSubjectType($node, $xpath),
+				'uri' 	 => Parse::getSubjectUri($node, $xpath),
+				'sameAs' => Parse::createSubjectSameAsArray($node, $xpath)
+			);
 			
-			/*pushes the value of the subject on the end of the array if the value matches the regula expresion
-			  Exsamples that will pas the regex: subj:11000000, subj:10000000, subj:04007000
-			*/
-			if(preg_match("/subj:[0-9]{8}/", $node->nodeValue)) {
-				array_push($subjects, $node->nodeValue);
-			}
+			array_push($subjects, $subject);
 		}
+		
+		var_dump($subjects);
 		
 		return $subjects;
+	}
+	
+	private static function createSubjectSameAsArray($subjectTag, $xpath) {
+		$sameAsArray = array( );
+		
+		$nodelist = $xpath->query("newsMessage:sameAs", $subjectTag);
+		
+		foreach($nodelist as $node) {
+			$sameAs = array(
+				'qcode' => Parse::getSubjectQcode($node, $xpath),
+				'name'  => Parse::getSubjectName($node, $xpath), 
+				'type'  => Parse::getSubjectType($node, $xpath),
+				'uri'   => Parse::getSubjectUri($node, $xpath)
+			);
+			 
+			array_push($sameAsArray, $sameAs);
+		}
+		
+		return $sameAsArray;
+	}
+	
+	private static function getSubjectQcode($subjectTag, $xpath) {
+		$qcode = null;
+		
+		$nodelist = $xpath->query("@qcode", $subjectTag);
+		
+		foreach($nodelist as $node) {
+			$qcode = $node->nodeValue;
+		}
+		
+		return $qcode;
+	}
+	
+	private static function getSubjectName($subjectTag, $xpath) {
+		$nameArray = array( );
+		
+		$nodelist = $xpath->query("newsMessage:name", $subjectTag);
+		
+		foreach($nodelist as $node) {
+			$name = array(
+				'text' => $node->nodeValue,
+				'lang' => Parse::getSubjectLang($node, $xpath),
+				'role' => Parse::getSubjectRole($node, $xpath)
+			);
+			
+			array_push($nameArray, $name);
+		}
+		
+		return $nameArray;
+	}
+	
+	private static function getSubjectLang($nameTag, $xpath) {
+		$lang = null;
+		
+		$nodelist = $xpath->query("@xml:lang", $nameTag);
+		
+		foreach($nodelist as $node) {
+			$lang = $node->nodeValue;
+		}
+		
+		return $lang;
+	}
+	
+	private static function getSubjectRole($nameTag, $xpath) {
+		 $role = null;
+		 
+		 $nodelist = $xpath->query("@role", $nameTag);
+		 
+		 foreach($nodelist as $node) {
+			$role = $node->nodeValue;
+		}
+		
+		return $role;
+	}
+	
+	private static function getSubjectType($subjectTag, $xpath) {
+		 $type = null;
+		 
+		 $nodelist = $xpath->query("@type", $subjectTag);
+		 
+		 foreach($nodelist as $node) {
+			$type = $node->nodeValue;
+		}
+		
+		return $type;
+	}
+	
+	private static function getSubjectUri($subjectTag, $xpath) {
+		$uri = null;
+		
+		$nodelist = $xpath->query("@uri", $subjectTag);
+		
+		foreach($nodelist as $node) {
+			$uri = $node->nodeValue;
+		}
+		
+		return $uri;
 	}
 	
 	/**
