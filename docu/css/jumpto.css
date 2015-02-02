@@ -1,0 +1,69 @@
+.jumpto-cotainer {
+  position: relative;
+}
+.jumpto-subnav {
+  font-weight: bold;
+  position: absolute;
+  top: 0;
+  left: -240px;
+  width: 200px;
+  background: rgba(255,255,255,0.7);
+}
+
+.jumpto-subnav .jumpto-second {
+  display: none;
+}
+
+.jumpto-subnav.fixed {
+  position: fixed !important;
+  left: auto;
+  top: 25px;
+  margin-left: -240px;
+}
+
+.jumpto-subnav.fixed.bottom {
+  top: auto;
+  bottom: 0;
+  position: absolute !important;
+}
+
+.jumpto-subnav ul{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.jumpto-subnav ul li{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.jumpto-subnav ul li a {
+ padding:10px;
+ display: block;
+ box-sizing: border-box; 
+ -moz-box-sizing: border-box;
+ -webkit-box-sizing: border-box;
+ color: #2574A9;
+ font-size: 16px;
+}
+
+.jumpto-subnav ul li a:hover, .jumpto-subnav ul li a.active {
+  background: #4183D7;
+  color:white;
+}
+.jumpto-subnav ul > li > ul > li > a{
+  padding-left: 15px;
+}
+
+.jumpto-title, .jumpto-close a{
+  background: #7D0A2C;
+  color: #FFF;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 20px;
+  font-weight: 500;
+  padding: 5px 10px;
+  display: block;
+}
