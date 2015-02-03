@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Class used to parse newsItems
+ *
+ * This class parses newsItems in NewsML-G2 using DOMXPath. It den send them to a RESTApi
+ *
+ * @author Petter Lundberg Olsen
+ */
 class NewsItemParse {
 	
 	/*Array structore of $returnArray that are sendt to the RESTApi:
@@ -795,7 +802,7 @@ class NewsItemParse {
 	 *
 	 * This metod uses a DOMXPath query to find all subjects in a newsItem nad return them as an array
 	 *
-	 * @param DOMNode $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return array contaning all subjects
 	 * @author Petter Lundberg Olsen
@@ -803,14 +810,18 @@ class NewsItemParse {
 	private static function createSubjectSameAsArray($subjectTag, $xpath) {
 		$sameAsArray = array( );
 		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: sameAs
+		*/
 		$nodelist = $xpath->query("newsMessage:sameAs", $subjectTag);
 		
+		//This loop creates an array contaning information about each subject
 		foreach($nodelist as $node) {
 			$sameAs = array(
-				'qcode' => NewsItemParse::getSubjectQcode($node, $xpath),
-				'name'  => NewsItemParse::getSubjectName($node, $xpath), 
-				'type'  => NewsItemParse::getSubjectType($node, $xpath),
-				'uri'   => NewsItemParse::getSubjectUri($node, $xpath)
+				'qcode' => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name'  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
+				'type'  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
+				'uri'   => NewsItemParse::getSubjectUri($node, $xpath) //string, subject uri
 			);
 			 
 			array_push($sameAsArray, $sameAs);
@@ -819,11 +830,28 @@ class NewsItemParse {
 		return $sameAsArray;
 	}
 	
+	/**
+	 * Finds and returns a subjects qcode
+	 *
+	 * This metod uses a DOMXPath query to find and return a subjcts qcode
+	 *
+	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string qcode, null if no qcode present
+	 * @author Petter Lundberg Olsen
+	 */
+	 */
 	private static function getSubjectQcode($subjectTag, $xpath) {
 		$qcode = null;
 		
+		/*This XPath query is a subquery from the query in the metod createSubjectArray/createSubjectSameAsArray
+		  Path without XML namespace: qcode-attribute
+		*/
 		$nodelist = $xpath->query("@qcode", $subjectTag);
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$qcode = $node->nodeValue;
 		}
@@ -831,11 +859,27 @@ class NewsItemParse {
 		return $qcode;
 	}
 	
+	
+	/**
+	 * Find and returns an array containg name and other data
+	 *
+	 * This metod uses a DOMEXPath query to find a subjects name and put it and other data about it in an array
+	 * that are being added in the array of names
+	 *
+	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array containg name arrays
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getSubjectName($subjectTag, $xpath) {
 		$nameArray = array( );
 		
+		/*This XPath query is a subquery from the query in the metod createSubjectArray/createSubjectSameAsArray
+		  Path without XML namespace: name
+		*/
 		$nodelist = $xpath->query("newsMessage:name", $subjectTag);
 		
+		//This loop creates the name arrays and storing there information
 		foreach($nodelist as $node) {
 			$name = array(
 				'text' => $node->nodeValue,
@@ -849,11 +893,28 @@ class NewsItemParse {
 		return $nameArray;
 	}
 	
+	/**
+	 * Find and return a subject names langugage
+	 *
+	 * This metod uses a DOMEXPath query to find a subjects name language and put it and other data about it in an array
+	 * that are being added in the array of names
+	 *
+	 * @param DOMNode $nameTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string langugage, null if no language is present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getSubjectLang($nameTag, $xpath) {
 		$lang = null;
 		
+		/*This XPath query is a subquery from the query in the metod getSubjectName
+		  Path without XML namespace: lang-attribute
+		*/
 		$nodelist = $xpath->query("@xml:lang", $nameTag);
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$lang = $node->nodeValue;
 		}
@@ -861,11 +922,26 @@ class NewsItemParse {
 		return $lang;
 	}
 	
+	/**
+	 * Finds and returns a subject names role
+	 *
+	 * This metod uses a DOMXPath query to find and return the role of a name tag under a subject
+	 *
+	 * @param DOMNode $nameTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string role null if no role is present
+	 */
 	private static function getSubjectRole($nameTag, $xpath) {
 		 $role = null;
 		 
+		 /*This XPath query is a subquery from the query in the metod getSubjectName
+		  Path without XML namespace: role-attribute
+		*/
 		 $nodelist = $xpath->query("@role", $nameTag);
 		 
+		 /*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		 foreach($nodelist as $node) {
 			$role = $node->nodeValue;
 		}
@@ -873,11 +949,27 @@ class NewsItemParse {
 		return $role;
 	}
 	
+	/**
+	 * Finds and returns a subjects type
+	 *
+	 * This metod uses a DOMXPath query to find and return a subjects role attribute
+	 *
+	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string type, null if no type present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getSubjectType($subjectTag, $xpath) {
 		 $type = null;
 		 
+		/*This XPath query is a subquery from the query in the metod createSubjectArray/createSubjectSameAsArray
+		  Path without XML namespace: type-attribute
+		*/
 		 $nodelist = $xpath->query("@type", $subjectTag);
 		 
+		 /*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		 foreach($nodelist as $node) {
 			$type = $node->nodeValue;
 		}
@@ -885,11 +977,27 @@ class NewsItemParse {
 		return $type;
 	}
 	
+	/**
+	 * Finds and returns subject uri
+	 *
+	 * This metod uses a DOMXPath query to find and return a subjects uri
+	 *
+	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string uri, null if no uri present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getSubjectUri($subjectTag, $xpath) {
 		$uri = null;
 		
+		/*This XPath query is a subquery from the query in the metod createSubjectArray/createSubjectSameAsArray
+		  Path without XML namespace: type-attribute
+		*/
 		$nodelist = $xpath->query("@uri", $subjectTag);
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$uri = $node->nodeValue;
 		}
