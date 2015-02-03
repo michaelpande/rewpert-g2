@@ -57,30 +57,49 @@
 	</ul>
 	<br>
 	
-	<?php echo '<form action="'.htmlspecialchars($_SERVER["PHP_SELF"]).'?page=newsml-g2" method="post" enctype="multipart/form-data">' ?>
+	<?php echo '<form class="well" action="'.htmlspecialchars($_SERVER["PHP_SELF"]).'?page=newsml-g2" method="post" enctype="multipart/form-data">' ?>
 	<h3>POST the XML to the following url</h3> 
 	<label for="debugbox" >Debug</label> <input type="checkbox" name="debugbox" id="debugbox" value="false" /><br><br>
 	<input style='width:100%' id="url" type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
 	<br><br>
 	<br>
 	
-	<form action="" method="post">
+	<form class="well" action="" method="post">
 		<input type="hidden" name="NewKey" value="true" /><br>
 		<input type="submit"  value="Create new API key and update the URL" />
 
-	</form>
-			<p>
+	</form><br><br>
+	<h2>QCodes, (Subjects, Mediatopics)</h2>
+	<p><strong>IPTC CV Subjects: </strong>http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB</p>
+	<p><strong>IPTC CV Mediatopics: </strong>http://cv.iptc.org/newscodes/mediatopic?format=g2ki&lang=en-GB</p>
+	<form action="" method="post" style="display:inline-block">
+		<input type="hidden" name="NewKey" value="true" /><br>
+		<input type="text" value="http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB" />
+		<input type="submit"  value="Update QCodes" /><br>
 		
-	</p>
+
+	</form>
+		<form action="" method="post" style="display:inline-block">
+		<input type="hidden" name="DeleteQCodes" value="true" /><br>
+		<input type="submit"  value="Delete all QCodes" /><br>
+		
+
+	</form>
+		
+		
+		
+		
+		<br><br>
+	
 	<br><br>
 	
 	<div class="nml2-container">
 	<h2>Quick reference</h2>
 		<div class="nml2-right">
 			<h4>Documentation</h4>
-			<a href="">Documentation</a><br>
-			<a href="">Examples</a><br>
-			<a href="">Source code</a><br>
+			<a href="<?php echo getPathToPluginDir();?>docu">Documentation</a><br>
+			<a href="<?php echo getPathToPluginDir();?>docu#jumpto_2">Examples</a><br>
+			<a href="http://github.com">Source code</a><br>
 		
 		</div>
 		<div class="nml2-right">

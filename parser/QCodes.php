@@ -1,4 +1,4 @@
-x<?php
+<?php
 /*
 	
 	Retrieves and stores NewsCodes from the IPTC Controlled Vocabulary (CV) for NewsCodes
@@ -8,16 +8,21 @@ x<?php
 */
 
 
-NewsCodes::test();
+QCodes::test();
 
-class NewsCodes{
-	
-	$destination_url = "cache";
+class QCodes{
+
 	
 	
 	public static function test(){
 		
-	// Arrange
+	require_once('KnowledgeItem/KnowledgeItem.php');
+	//KnowledgeItemParse::test();
+	QCodes::update("KnowledgeItem/test_subjectcode.xml");
+	//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB");
+	
+	
+	/*// Arrange
 	
 		// Related Concept (skos:exactMatch & skos:broader):
 		$subjectCode1 = "subj:15015005";
@@ -48,7 +53,7 @@ class NewsCodes{
 		}
 		
 		
-		
+		*/
 		
 	}
 
@@ -83,6 +88,38 @@ class NewsCodes{
 		
 		
 		
+	// Update qcodes by URL or File	
+	public static function update($file){
+		require_once('/KnowledgeItem/KnowledgeItem.php');
+		$subjects = KnowledgeItemParse::getQCodes($file);
+		
+		include('/Database/API.php');
+		
+		// Updates DB with the new QCodes. 
+		$db = new SimpleStorage();
+		
+		$db->prepare(true);
+		foreach($subjects as $value){
+			$db->update($value['qcode'],"", $value['name']);
+		}
+		$db->execute();
+		
+		echo "<br><br>----CONTENTS----<br><br>";
+		foreach($subjects as $value){
+			echo("SimpleStorage : <br>". $value['qcode'] ." : ". $db->get($value['qcode'],"") . "<br><br>");
+
+		}
+		
+		
+	}
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		
 	// Get newscode with matching subj::
@@ -101,9 +138,14 @@ class NewsCodes{
 	
 	
 	
-	private static function updateSubjects(){
+	private static function updateWP(){
 		
-		file_put_contents("Tmpfile.zip", fopen("http://someurl/file.zip", 'r'));
+		// Update every week
+				// QUERY -> LATEST NML2_UPDATED_TIME > 1 WEEK
+				
+		// DO UPDATE
+				// QUERY -> UPDATE NML2_UPDATED_TIME
+		
 	}
 	
 	private static function updateMediatopics(){
