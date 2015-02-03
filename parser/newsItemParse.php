@@ -840,7 +840,6 @@ class NewsItemParse {
 	 * @return string qcode, null if no qcode present
 	 * @author Petter Lundberg Olsen
 	 */
-	 */
 	private static function getSubjectQcode($subjectTag, $xpath) {
 		$qcode = null;
 		
