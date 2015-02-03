@@ -1,10 +1,8 @@
 <?php
 
-class Parse {
+class NewsItemParse {
 	
-	/*A metod used to create and fill the array that contains a status code, post information and metadata from a NewsML-G2 document
-	  
-	  Array structore:
+	/*Array structore of $returnArray that are sendt to the RESTApi:
 		$returnArray = array(
 			'status_code' => int
 			0 => newsItemArray = array(
@@ -61,13 +59,13 @@ class Parse {
 														0 => sameAs = array(
 															'qcode'  => string
 															'name' 	 => $nameArray = array(
-																0 => name = array(
-																	'text' => string
-																	'lang' => string
-																	'role' => string
-																	 );
+																		0 => name = array(
+																			'text' => string
+																			'lang' => string
+																			'role' => string
+																			 );
 																1 => Same as the index above. Number of indexes depends on number of names
-																	);
+																		);
 															'type' 	 => string
 															'uri' 	 => string
 															);
@@ -79,15 +77,23 @@ class Parse {
 				 );
 			1 => Same as index 0. This is index, index 0 and alle numbers above is added whit array_push
 				 and the index numbers used is decidded by the numbers of newsItems
-		);		 
-		
-	  Returns: an associative array
-	  Parameters:
-		- $file: the raw XML in the NewsML-G2 format
-	*/ 	
+		);
+	*/		 
+
+	/**
+	 * Creats and returns the arraystructure that are sendt to the RESTApi
+     *
+	 * This metod is the main metod of the NewsItemParse file. It creates the DOMXpath object used to query information from a NewsML-G2 document.
+	 * The array containg all the information from the NewsML document are created in this metod.
+	 *
+	 * @param $file, raw XML or XML file
+	 * @return array
+	 * @author Petter Lundberg Olsen
+	 */
 	public static function createPost($file){
 		$doc = new DOMDocument();
 		
+		//Checks if $file is raw XML or a XML file and uses the corect load operation
 		if(is_file($file)) {
 			$doc->load($file);
 		}
@@ -111,19 +117,20 @@ class Parse {
 			'status_code' => 200 //int, the status code automatically set to 200
 		);
 		
+		//Files the given array for each newsItem
 		foreach($newsItemList as $newsItem) {
 			$newsItemArray = array(
-				'post'  	=> Parse::createPostArray($newsItem, $xpath),
-				'meta'  	=> Parse::createMetaArray($newsItem, $xpath),
-				'users' 	=> Parse::createUserArray($newsItem, $xpath),
-				'subjects' 	=> Parse::createSubjectArray($newsItem, $xpath)
+				'post'  	=> NewsItemParse::createPostArray($newsItem, $xpath),
+				'meta'  	=> NewsItemParse::createMetaArray($newsItem, $xpath),
+				'users' 	=> NewsItemParse::createUserArray($newsItem, $xpath),
+				'subjects' 	=> NewsItemParse::createSubjectArray($newsItem, $xpath)
 			);
 			
 			//Cheking if there is anny errors in the data gathert from the newsML document and chenges status code accordingly
-			$returnArray['status_code'] = Parse::setStatusCode($returnArray, $newsItemArray);
+			$returnArray['status_code'] = NewsItemParse::setStatusCode($returnArray, $newsItemArray);
 			
 			//Cheking if an embargo date is present and changes 'post_status' accordingly
-			$newsItemArray['post']['post_status'] = Parse::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
+			$newsItemArray['post']['post_status'] = NewsItemParse::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
 			
 			//Adds the informating found in the newsItem to the array that will be sendt to the RESTApi
 			array_push($returnArray, $newsItemArray);
@@ -132,19 +139,24 @@ class Parse {
 		return $returnArray;	
 	}
 	
-	/*A metod used to create and fill the array containg the post that are to be added to the Worptess database
-	  Returns: an associative array on a satadard given by Wordpress, see http://codex.wordpress.org/Function_Reference/wp_insert_post
-	  for more information on the post array
-	  Parameters:
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/ 	
+	/**
+	 * Creates and returns the array contaning the post
+	 *
+	 * This metod creates and returns an array containg the post that are sendt to the Wordpress database. The way to array is strucured is
+	 * given by Worpdress to be able to use the wp_inser_post metod, see http://codex.wordpress.org/Function_Reference/wp_insert_post
+	 * for more information on the post array
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that a new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function createPostArray($newsItem, $xpath) {
         $post = array(
             //'ID'           => [ <post id> ] // Are you updating an existing post?
-            'post_content'   => Parse::getPostContent($newsItem, $xpath), // The full text of the post.
-            'post_name'      => Parse::getPostName($newsItem, $xpath), // The name (slug) for your post
-            'post_title'     => Parse::getPostHeadline($newsItem, $xpath), // The title of your post.
+            'post_content'   => NewsItemParse::getPostContent($newsItem, $xpath), // The full text of the post.
+            'post_name'      => NewsItemParse::getPostName($newsItem, $xpath), // The name (slug) for your post
+            'post_title'     => NewsItemParse::getPostHeadline($newsItem, $xpath), // The title of your post.
             'post_status'  	 => 'publish', //[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
             /*'post_type'      => [ 'post' | 'page' | 'link' | 'nav_menu_item' | custom post type ] // Default 'post'.
             'post_author'    => [ <user ID> ] // The user ID number of the author. Default is the current user ID.
@@ -154,14 +166,14 @@ class Parse {
             'to_ping'        => // Space or carriage return-separated list of URLs to ping. Default empty string.
             'pinged'         => // Space or carriage return-separated list of URLs that have been pinged. Default empty string.
             'post_password'  => [ <string> ] // Password for post, if any. Default empty string.
-            'guid'           => Parse::getPostGuid($xpath)// Skip this and let Wordpress handle it, usually.
+            'guid'           => NewsItemParse::getPostGuid($xpath)// Skip this and let Wordpress handle it, usually.
             'post_content_filtered' => // Skip this and let Wordpress handle it, usually.
             'post_excerpt'   => [ <string> ] // For all your post excerpt needs.
             'post_date'      => [ Y-m-d H:i:s ] // The time post was made.
             'post_date_gmt'  => [ Y-m-d H:i:s ] // The time post was made, in GMT.
             'comment_status' => [ 'closed' | 'open' ] // Default is the option 'default_comment_status', or 'closed'.
             'post_category'  => [ array(<category id>, ...) ] // Default empty.*/
-            'tags_input'     => Parse::getPostTags($newsItem, $xpath) // Default empty.
+            'tags_input'     => NewsItemParse::getPostTags($newsItem, $xpath) // Default empty.
             /*'tax_input'      => [ array( <taxonomy> => <array | string> ) ] // For custom taxonomies. Default empty.
             'page_template'  => [ <string> ] // Requires name of template file, eg template.php. Default empty.*/
         );
@@ -169,43 +181,59 @@ class Parse {
 		return $post;
 	}
 	
-	/*A metod used to create and fill the array containg metadata frome the NewsML document
-	  Returns: an associative array
-	  Parameters:
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/ 	
+	/**
+	 * Creates and files the metadata array
+	 *
+	 * This metod creates and files the array contaning the metadata of a newsMessage
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that a new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function createMetaArray($newsItem, $xpath) {
 		$meta = array(
-			'nml2_guid' 		  	=> Parse::getMetaGuid($newsItem, $xpath), //string, the guide of the newsItem
-			'nml2_version' 		  	=> Parse::getMetaVersion($newsItem, $xpath), //string, the version of the newsItem
-			'nml2_firstCreated'   	=> Parse::getMetaFirstCreated($newsItem, $xpath), //string, the timesap when the newsItem was first created
-			'nml2_versionCreated' 	=> Parse::getMetaVersionCreated($newsItem, $xpath), //string, the timestamp when the curent version of the newsItem var created
-			'nml2_embarogDate' 	  	=> Parse::getMetaEmbargo($newsItem, $xpath), //string, timestamp of the embargo
-			'nml2_newsMessageSendt' => Parse::getMetaSentDate($xpath), //string
-			'nml2_language'			=> Parse::getMetaLanguage($newsItem, $xpath), //string
-			'nml2_creator' 			=> null, //array
-			'nm2_contributor' 		=> null //array
+			'nml2_guid' 		  	=> NewsItemParse::getMetaGuid($newsItem, $xpath), //string, the guide of the newsItem
+			'nml2_version' 		  	=> NewsItemParse::getMetaVersion($newsItem, $xpath), //string, the version of the newsItem
+			'nml2_firstCreated'   	=> NewsItemParse::getMetaFirstCreated($newsItem, $xpath), //string, the timesap when the newsItem was first created
+			'nml2_versionCreated' 	=> NewsItemParse::getMetaVersionCreated($newsItem, $xpath), //string, the timestamp when the curent version of the newsItem var created
+			'nml2_embarogDate' 	  	=> NewsItemParse::getMetaEmbargo($newsItem, $xpath), //string, timestamp of the embargo
+			'nml2_newsMessageSendt' => NewsItemParse::getMetaSentDate($xpath), //string, timestamp from when the newsMessage where sendt
+			'nml2_language'			=> NewsItemParse::getMetaLanguage($newsItem, $xpath), //string, the language of the content in the newsItem
 		);
 		
 		return $meta;
 	}
 	
+	/**
+	 * Creates and returns an array contaning creators and contributors
+	 *
+	 * This metod creaetes and returns an array containg to inner arrays, on is a list of a newsItems creaotrs, and the other a list of its contributors
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that a new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function createUserArray($newsItem, $xpath) {
 		$users = array(
-			'creators' 		=> Parse::getCreator($newsItem, $xpath),
-			'contributors' 	=> Parse::getContributor($newsItem, $xpath)
+			'creators' 		=> NewsItemParse::getCreator($newsItem, $xpath), //array
+			'contributors' 	=> NewsItemParse::getContributor($newsItem, $xpath) //array
 		);
 		
 		return $users;
 	}
 	
-	/*A metod used to find the contet of the news articel
-	  Returns: content as string, null if no content found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
+	/**
+	 * Finds and returns content of a newsItem
+	 *
+	 * This metod uses a DOMXPath query to find and return the main content of a newsarticel in a given newsItem
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string content, null if no content present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPostContent($newsItem, $xpath) {
 		$content = null;
 		
@@ -242,12 +270,16 @@ class Parse {
         return $content;
 	}
 	
-	/*A metod used to find the headline of the news articel
-	  Returns: headline as string, null if no headline found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
+	/**
+	 * Find ans return headline
+	 *
+	 * This metod uses a DOMXPath query to find and return the headline of a newsItem
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string headline, null if no headline present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPostHeadline($newsItem, $xpath) {
 		$headline = null;
 		
@@ -284,12 +316,16 @@ class Parse {
 		return $headline;
 	}
 	
-	/*A metod used to find the slugline of the news articel
-	  Returns: slugline as string, null if no slugline found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
+	/**
+	 * Finds and returns slugline
+	 *
+	 * This metod uses a DOMXPath query to find and return the slugline of a newsItem
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string slugline, null if no slugline present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPostName($newsItem, $xpath) {
 		$name = null;
 		
@@ -308,12 +344,17 @@ class Parse {
 		return $name;
 	}
 	
-	/*A metod used to find the keywords of the news articel and organises them soe they fit the way tags are stored in Wordpress
-	  Returns: tags as string, null if no keywords found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
+	/**
+	 * Find and returns the keyword of a newsItem
+	 *
+	 * This metod uses a DOMEXPath query to find and return the keyword given in a newsItem. The keywords are on the form: '<keyword>,<keyword>,...'
+	 * This form is neaded to use the keywords as tags in the Wordpress database
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string tags, null if no guid present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPostTags($newsItem, $xpath) {
 		$tags = null;
 		
@@ -332,12 +373,16 @@ class Parse {
 		return $tags;
 	}
 	
-	/*A metod used to find the guid of the news articel
-	  Returns: guid as string, null if no guid found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
+	/**
+	 * Findes and returns guid
+	 *
+	 * This metod uses a DOMXPath query to find and return the guid of a newsItem
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string guid, null if no guid present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getMetaGuid($newsItem, $xpath) {
 		$guid = null;
 		
@@ -356,17 +401,15 @@ class Parse {
 		return $guid;
 	}
 	
-	/*A metod used to find the version of the news articel
-	  Returns: version as string, null if no version found
-	  Parameters: 
-		- $newsItem: the result of the query made at the start of the document to separate diferent newsItems
-		- $xpath: the XPath variable neded to peform a query on a XML document
-	*/
-	
 	/**
-	 * Find and returns the version number
+	 * Finds and returns the version number
 	 *
 	 * This metod user DOMEXPath query to find and return the version number of the newsItem given in a NewsML-G2 document
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string version number, null if no version present
+	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaVersion($newsItem, $xpath) {
 		$version = null;
@@ -389,12 +432,11 @@ class Parse {
 	/**
 	 * Finds and returns a timestamp from when the news articel was first creaded
 	 *
-	 * This metod uses a DOMXPath query to find and return a timestamp from when the first version of the NewsML-G2
-	 * document where created
+	 * This metod uses a DOMXPath query to find and return a timestamp from when the first version of the newsItem where created
 	 *
-	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return string first created timestamp, null of no timestamp is present
+	 * @return string first created timestamp, null if no timestamp is present
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaFirstCreated($newsItem, $xpath) {
@@ -418,12 +460,11 @@ class Parse {
 	/**
 	 * Findes and returns a timestamp from when the present version was created
 	 *
-	 * This metod uses a DOMXPath query to find and return a timestamp from when the curent version of the NewsML-G2
-	 * document where created
+	 * This metod uses a DOMXPath query to find and return a timestamp from when the curent version of the newsItem where created
 	 *
-	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return string versioin created timestamp, null of no timestamp is present
+	 * @return string versioin created timestamp, null if no timestamp is present
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaVersionCreated($newsItem, $xpath) {
@@ -449,9 +490,9 @@ class Parse {
 	 *
 	 * This metod user DOMXPath query to find the embargo date of a NewsML-G2 Docuemtn and reutrns it as a string
 	 *
-	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return string embargo date, null of no embargo is present
+	 * @return string embargo date, null if no embargo is present
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaEmbargo($newsItem, $xpath) {
@@ -503,16 +544,22 @@ class Parse {
 	 *
 	 * This metod findes the laguage of the content in a NewsML-G2 docuemnt using DOMXPath and returns it as a string
 	 *
-	 * @param DOMNodeList $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return string The laguage of the news articel
+	 * @return string The language of the news articel, null if no language present
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaLanguage($newsItem, $xpath) {
 		$language = null;
 		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: contentMeta/language/tag-attribute
+		*/
 		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:language/@tag", $newsItem);
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/
 		foreach($nodelist as $node) {
 			$language = $node->nodeValue;
 		}
@@ -520,17 +567,32 @@ class Parse {
 		return $language;
 	}
 	
+	/**
+	 * Creates and returns all the creators of a newsItem
+	 *
+	 * This metod uses a DOMXPath query to find all the creators of a newsItem. It then files a user array whit iformation neded
+	 * to add a user in wordpress and some other metadata
+	 *
+	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array contaning all creators
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getCreator($newsItem, $xpath) {
 		$creator = array ( );
 		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: contentMeta/creator
+		*/
 		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:creator", $newsItem);
 		
+		//Takes each creator and adds ther information in the a user array
 		foreach($nodelist as $node) {
 			$user = array(
-				'user_login' 	=> Parse::getUserName($node, $xpath),
-				'description'	=> Parse::getUserDescription($node, $xpath),
-				'nml2_qcode'	=> Parse::getUserQcode($node, $xpath),
-				'nml2_uri'		=> Parse::getUserUri($node, $xpath)
+				'user_login' 	=> NewsItemParse::getUserName($node, $xpath), //string login_name of the user
+				'description'	=> NewsItemParse::getUserDescription($node, $xpath), //string, descibing the role of the user
+				'nml2_qcode'	=> NewsItemParse::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
+				'nml2_uri'		=> NewsItemParse::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
 
 			array_push($creator, $user);
@@ -539,17 +601,32 @@ class Parse {
 		return $creator;
 	}
 	
+	/**
+	 * Creates and returns all the contributors of a newsItem
+	 *
+	 * This metod uses a DOMXPath query to find all the contributors of a newsItem. It then files a user array whit iformation neded
+	 * to add a user in wordpress and some other metadata
+	 *
+	 * @param DOMNode $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array contaning all contributors
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getContributor($newsItem, $xpath) {
 		$contributor = array( );
 		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: contentMeta/contriubtor
+		*/
 		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:contributor", $newsItem);
 		
+		//Takes each creator and adds ther information in the a user array
 		foreach($nodelist as $node) {
 			$user = array(
-				'user_login' 	=> Parse::getUserName($node, $xpath),
-				'description'	=> Parse::getUserDescription($node, $xpath),
-				'nml2_qude'		=> Parse::getUserQcode($node, $xpath),
-				'nml2_uri'		=> Parse::getUserUri($node, $xpath)
+				'user_login' 	=> NewsItemParse::getUserName($node, $xpath), //string login_name of the user
+				'description'	=> NewsItemParse::getUserDescription($node, $xpath), //string, descibing the role of the user
+				'nml2_qude'		=> NewsItemParse::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
+				'nml2_uri'		=> NewsItemParse::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
 			
 			array_push($contributor, $user);
@@ -558,15 +635,36 @@ class Parse {
 		return $contributor;
 	}
 	
+	/**
+	 * Find and returns the name of a creator/contributor
+	 *
+	 * This metod uses a DOMXPath query to find and return the name of creator/contributor
+	 *
+	 * @param DOMNode $cTag XPath query result containg one creator/contributor that is used in a sub-query in this metod
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string name, null if noe name present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getUserName($cTag, $xpath) {
 		$userName = null;
 		
+		/*Query path that continus from the query in function getCreator/getContributor
+		  Path without XML namespace: name
+		*/
 		$nodelist = $xpath->query("newsMessage:name", $cTag);
 		
+		//If noe name tag is present, enter this part of the code
 		if($nodelist->length == 0) {
+		
+			/*Query path that continus from the query in function getCreator/getContributor
+			  Path without XML namespace: literal-attribute
+			*/
 			$nodelist = $xpath->query("@literal", $cTag);
 		}
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/
 		foreach($nodelist as $node) {
 			$userName = $node->nodeValue;
 		}
@@ -574,11 +672,27 @@ class Parse {
 		return $userName;
 	}
 	
+	/**
+	 * Find and returns the role of a creator/contributor
+	 *
+	 * This metod uses a DOMXPath query to find and return the role of creator/contributor
+	 *
+	 * @param DOMNode $cTag XPath query result containg one creator/contributor that is used in a sub-query in this metod
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string role, null if noe role present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getUserDescription($cTag, $xpath) {
 		$description = null;
 		
+		/*Query path that continus from the query in function getCreator/getContributor
+		  Path without XML namespace: role-attribute
+		*/
 		$nodelist = $xpath->query("@role", $cTag);
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$description = $node->nodeValue;
 		}
@@ -586,11 +700,27 @@ class Parse {
 		return $description;
 	}
 	
+	/**
+	 * Find and returns the qcode of a creator/contributor
+	 *
+	 * This metod uses a DOMXPath query to find and return the qcode of creator/contributor
+	 *
+	 * @param DOMNode $cTag XPath query result containg one creator/contributor that is used in a sub-query in this metod
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string qcode, null if noe qcode present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getUserQcode($cTag, $xpath) {
 		$qcode = null;
 		
+		/*Query path that continus from the query in function getCreator/getContributor
+		  Path without XML namespace: qcode-attribute
+		*/
 		$nodelist = $xpath->query("@qcode", $cTag);
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$qcode = $node->nodeValue;
 		}
@@ -598,11 +728,27 @@ class Parse {
 		return $qcode;
 	}
 	
+	/**
+	 * Find and returns the uri of a creator/contributor
+	 *
+	 * This metod uses a DOMXPath query to find and return the uri of creator/contributor
+	 *
+	 * @param DOMNode $cTag XPath query result containg one creator/contributor that is used in a sub-query in this metod
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string uri, null if noe uri present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getUserUri($cTag, $xpath) {
 		$uri = null;
 		
+		/*Query path that continus from the query in function getCreator/getContributor
+		  Path without XML namespace: uri-attribute
+		*/
 		$nodelist = $xpath->query("@uri", $cTag);
 		
+		/*Sets the results of the query above on the return variable if anny.
+		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$uri = $node->nodeValue;
 		}
@@ -610,28 +756,50 @@ class Parse {
 		return $uri;
 	}
 	
+	/**
+	 * Creates and returns an array containg subjects
+	 *
+	 * This metod uses a DOMXPath query to find all subjects in a newsItem nad return them as an array
+	 *
+	 * @param DOMNode $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array contaning all subjects
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function createSubjectArray($newsItem, $xpath) {
 		$subjects = array( );
 		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: contentMeta/subject
+		*/
 		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject", $newsItem);
 		
+		//This loop creates an array contaning information about each subject
 		foreach($nodelist as $node) {
 			$subject = array(
-				'qcode'  => Parse::getSubjectQcode($node, $xpath),
-				'name' 	 => Parse::getSubjectName($node, $xpath),
-				'type' 	 => Parse::getSubjectType($node, $xpath),
-				'uri' 	 => Parse::getSubjectUri($node, $xpath),
-				'sameAs' => Parse::createSubjectSameAsArray($node, $xpath)
+				'qcode'  => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name' 	 => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
+				'type' 	 => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
+				'uri' 	 => NewsItemParse::getSubjectUri($node, $xpath), //string, subject uri
+				'sameAs' => NewsItemParse::createSubjectSameAsArray($node, $xpath) //array, an array containig all subjects sameAs tags
 			);
 			
 			array_push($subjects, $subject);
 		}
 		
-		var_dump($subjects);
-		
 		return $subjects;
 	}
 	
+	/**
+	 * Creates and returns an array containg subjects
+	 *
+	 * This metod uses a DOMXPath query to find all subjects in a newsItem nad return them as an array
+	 *
+	 * @param DOMNode $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array contaning all subjects
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function createSubjectSameAsArray($subjectTag, $xpath) {
 		$sameAsArray = array( );
 		
@@ -639,10 +807,10 @@ class Parse {
 		
 		foreach($nodelist as $node) {
 			$sameAs = array(
-				'qcode' => Parse::getSubjectQcode($node, $xpath),
-				'name'  => Parse::getSubjectName($node, $xpath), 
-				'type'  => Parse::getSubjectType($node, $xpath),
-				'uri'   => Parse::getSubjectUri($node, $xpath)
+				'qcode' => NewsItemParse::getSubjectQcode($node, $xpath),
+				'name'  => NewsItemParse::getSubjectName($node, $xpath), 
+				'type'  => NewsItemParse::getSubjectType($node, $xpath),
+				'uri'   => NewsItemParse::getSubjectUri($node, $xpath)
 			);
 			 
 			array_push($sameAsArray, $sameAs);
@@ -671,8 +839,8 @@ class Parse {
 		foreach($nodelist as $node) {
 			$name = array(
 				'text' => $node->nodeValue,
-				'lang' => Parse::getSubjectLang($node, $xpath),
-				'role' => Parse::getSubjectRole($node, $xpath)
+				'lang' => NewsItemParse::getSubjectLang($node, $xpath),
+				'role' => NewsItemParse::getSubjectRole($node, $xpath)
 			);
 			
 			array_push($nameArray, $name);

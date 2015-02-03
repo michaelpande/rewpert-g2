@@ -1,7 +1,7 @@
 <?php 
 	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing and var_dumping. 
 	
-	include('parser/parse.php');
+	include('parser/newsItemParse.php');
 	include('parser/DateParser.php');
 	include('parser/errorLogger.php');
 	include('../../../wp-load.php'); // Potentially creates bugs.
@@ -49,7 +49,7 @@
 
 	
 	$postdata = getRequestParams();
-	$parsed = Parse::createPost($postdata);
+	$parsed = newsItemParse::createPost($postdata);
 	
 	
 	debug("<h3>Returned from Parse.php: </h3>");
