@@ -3,6 +3,16 @@
 	// Simple Cache Storage
 	// 		A simple database storage, for storing parameters quickly and easy.
 	// 
+	
+	
+	
+	// FIX PREPARED - UPDATES
+	// MORE TESTING
+	// FIX FILENAME (Constructor)
+	// LINUX SAFE URL?
+	
+	
+	
 	//SimpleStorageTest::test();
 	//AdvancedStorageTest::test();
 	//PrepareStorageTest::test();
@@ -13,8 +23,44 @@
 		private $prepare = false; 
 		private $preparedInsert = null;
 		private $insertCount = 0;
+		private $database_name;
+		
+		function __construct(){
+			global $database_name;
+			
+			$database_name = "SimpleStorage.db";
+			
+		}
 		
 		
+		public function database_name($name){
+			global $database_name;
+			if(isset($name) && is_string($name)){
+				echo $name;
+				$database_name = $name;
+			}
+		}
+		
+		
+
+		
+		
+		private function db_location(){
+			global $database_name;
+			
+
+			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+				
+				return dirname(__FILE__) . '\\' .$database_name; // Windows
+			} else {
+				return dirname(__FILE__) . '/' .$database_name; // Linux
+			}
+			
+			
+		}
+		
+		
+		// Method to decide if all insert / update statements should be combined into a few large. Call on Execute after entire statement is prepared.
 		public function prepare($bool){
 			global $prepare;
 			if(is_bool($bool)){
@@ -45,11 +91,11 @@
 			}
 		}
 		
-		
+		// Call on this to execute the prepared statement
 		public function execute(){
 			global $prepare, $preparedInsert;
-			
 			if($prepare != null && $preparedInsert != null){
+			
 				try{
 					$db = $this->createDB();
 					echo ("<br>execute() - EXECUTE<br>");
@@ -77,7 +123,7 @@
 			}
 			
 			try{
-				$db = new PDO('sqlite:SimpleStorage.sqlite');
+				$db = new PDO('sqlite:'.$this->db_location());
 				$db->exec("CREATE TABLE SimpleStorage (key1 TEXT NOT NULL, key2 TEXT NOT NULL, val TEXT NOT NULL, dt DATETIME, PRIMARY KEY(key1,key2))");  
 				return $db;
 			}
@@ -121,7 +167,7 @@
 		public function update($key1, $key2, $value){
 			
 			if($this->get($key1,$key2) == null){
-				return set($key1,$key2,$value);
+				return $this->set($key1,$key2,$value);
 			}
 			
 			try{

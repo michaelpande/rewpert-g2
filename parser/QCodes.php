@@ -97,7 +97,7 @@ class QCodes{
 		
 		// Updates DB with the new QCodes. 
 		$db = new SimpleStorage();
-		
+		$db->database_name("Test.db");
 		$db->prepare(true);
 		foreach($subjects as $value){
 			$db->update($value['qcode'],"", $value['name']);
