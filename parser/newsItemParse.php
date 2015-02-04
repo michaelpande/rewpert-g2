@@ -78,9 +78,37 @@ class NewsItemParse {
 															);
 														1 => same as the index above. Number of indexes depends on number of sameAs tags under a subjects
 														);
+											'broader' => $broaderArray = array(
+														  0 => broader = array(
+																'qcode'  => string
+																'name' 	 => $nameArray = array(
+																		0 => name = array(
+																			'text' => string
+																			'lang' => string
+																			'role' => string
+																			 );
+																		1 => Same as the index above. Number of indexes depends on number of names
+																			);
+																'type' 	 => string
+																'uri' 	 => strin
+														  1 => same as the index above. Number of indexes depends on number of broader tags under a subjects
+																);
+														  );
 										);
 									1 => same as the index above. Number of indexes depends on number of subjects
-									);
+								    );
+					'photo' => $photos = array(
+								0 => $photo = array(
+										'href' => string
+										'size' => string
+										'width' => string
+										'height' => string
+										'contenttype' => string
+										'colourspace' => string
+										'rendition' => string
+									 );
+								1 => same as indez above. Number of indexes depends on number of photos
+								);
 				 );
 			1 => Same as index 0. This is index, index 0 and alle numbers above is added whit array_push
 				 and the index numbers used is decidded by the numbers of newsItems
@@ -127,10 +155,11 @@ class NewsItemParse {
 		//Files the given array for each newsItem
 		foreach($newsItemList as $newsItem) {
 			$newsItemArray = array(
-				'post'  	=> NewsItemParse::createPostArray($newsItem, $xpath),
-				'meta'  	=> NewsItemParse::createMetaArray($newsItem, $xpath),
-				'users' 	=> NewsItemParse::createUserArray($newsItem, $xpath),
-				'subjects' 	=> NewsItemParse::createSubjectArray($newsItem, $xpath)
+				'post'  	=> NewsItemParse::createPostArray($newsItem, $xpath), //array
+				'meta'  	=> NewsItemParse::createMetaArray($newsItem, $xpath), //array
+				'users' 	=> NewsItemParse::createUserArray($newsItem, $xpath), //array
+				'subjects' 	=> NewsItemParse::createSubjectArray($newsItem, $xpath), //array
+				'photo' 	=> NewsItemParse::createPhotoArray($newsItem, $xpath) //array
 			);
 			
 			//Cheking if there is anny errors in the data gathert from the newsML document and chenges status code accordingly
@@ -229,6 +258,30 @@ class NewsItemParse {
 		);
 		
 		return $users;
+	}
+	
+	private static function createPhotoArray($newsItem, $xpath) {
+		$photos = array( );
+		
+		$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:remoteContent", $newsItem);
+		
+		foreach($nodelist as $node) {
+			$photo = array( 
+				'href' => NewsItemParse::getPhotoHref($node, $xpath),
+				'size' => NewsItemParse::getPhotoSize($node, $xpath),
+				'width' => NewsItemParse::getPhotoWidth($node, $xpath),
+				'height' => NewsItemParse::getPhotoHeight($node, $xpath),
+				'contenttype' => NewsItemParse::getPhotoContenttype($node, $xpath),
+				'colourspace' => NewsItemParse::getPhotoColourspace($node, $xpath),
+				'rendition' => NewsItemParse::getPhotoRendition($node, $xpath)
+			);
+			
+			var_dump($photo);
+			
+			array_push($photos, $photo);
+		}
+		
+		return $photos;
 	}
 	
 	/**
@@ -784,11 +837,12 @@ class NewsItemParse {
 		//This loop creates an array contaning information about each subject
 		foreach($nodelist as $node) {
 			$subject = array(
-				'qcode'  => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
-				'name' 	 => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
-				'type' 	 => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
-				'uri' 	 => NewsItemParse::getSubjectUri($node, $xpath), //string, subject uri
-				'sameAs' => NewsItemParse::createSubjectSameAsArray($node, $xpath) //array, an array containig all subjects sameAs tags
+				'qcode'   => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name' 	  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
+				'type' 	  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
+				'uri' 	  => NewsItemParse::getSubjectUri($node, $xpath), //string, subject uri
+				'sameAs'  => NewsItemParse::createSubjectSameAsArray($node, $xpath), //array, an array containig all subjects sameAs tags
+				'broader' => NewsItemParse::createSubjectBroaderArray($node, $xpath) //array, an array containg all subjects broader tags
 			);
 			
 			array_push($subjects, $subject);
@@ -828,6 +882,25 @@ class NewsItemParse {
 		}
 		
 		return $sameAsArray;
+	}
+	
+	private static function createSubjectBroaderArray($subjectTag, $xpath) {
+		$broaderArray = array( );
+		
+		$nodelist = $xpath->query("newsMessage:broader", $subjectTag);
+
+		foreach($nodelist as $node) {
+			$broader = array(
+				'qcode' => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name'  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
+				'type'  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
+				'uri'   => NewsItemParse::getSubjectUri($node, $xpath) //string, subject uri
+			);
+			
+			array_push($broaderArray, $broader);
+		}
+		
+		return $broaderArray;
 	}
 	
 	/**
@@ -995,13 +1068,97 @@ class NewsItemParse {
 		$nodelist = $xpath->query("@uri", $subjectTag);
 		
 		/*Sets the results of the query above on the return variable if anny.
-		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		  The length of the 4$nodelist shuld only be 1 if the newsML is created correctly.
 		*/ 
 		foreach($nodelist as $node) {
 			$uri = $node->nodeValue;
 		}
 		
 		return $uri;
+	}
+	
+	private static function getPhotoHref($remoteContent, $xpath) {
+		$href = null;
+		
+		$nodelist = $xpath->query("@href", $remoteContent);
+		
+		foreach($nodelist as $node) {
+			$href = $node->nodeValue;
+		}
+		
+		return $href;
+	}
+	
+	private static function getPhotoSize($remoteContent, $xpath) {
+		$size = null;
+		
+		$nodelist = $xpath->query("@size", $remoteContent);
+		
+		foreach($nodelist as $node) {
+			$size = $node->nodeValue;
+		}
+		
+		return $size;
+	}
+	
+	private static function getPhotoWidth($remoteContent, $xpath) {
+		$width = null;
+		
+		$nodelist = $xpath->query("@width", $remoteContent);
+		
+		foreach($nodelist as $node) {
+			$width = $node->nodeValue;
+		}
+		
+		return $width;
+	}
+	
+	private static function getPhotoHeight($remoteContent, $xpath) {
+		$height = null;
+		
+		$nodelist = $xpath->query("@height", $remoteContent);
+		
+		foreach($nodelist as $node) {
+			$height = $node->nodeValue;
+		}
+		
+		return $height;
+	}
+	
+	private static function getPhotoContenttype($remoteContent, $xpath) {
+		$contenttype = null;
+		
+		$nodelist = $xpath->query("@contenttype", $remoteContent);
+		
+		foreach($nodelist as $node) {
+			$contenttype = $node->nodeValue;
+		}
+		
+		return $contenttype;
+	}
+	
+	private static function getPhotoColourspace($remtoeContent, $xpath) {
+		$colourspace = null;
+		
+		$nodelist = $xpath->query("@colourspace", $remtoeContent);
+		
+		foreach($nodelist as $node) {
+			$colourspace = $node->nodeValue;
+		}
+		
+		return $colourspace;
+	}
+	
+	private static function getPhotoRendition($remoteContent, $xpath) {
+		$rendition = null;
+		
+		$nodelist = $xpath->query("@rendition", $remoteContent);
+		
+		foreach($nodelist as $node) {
+			$rendition = $node->nodeValue;
+		}
+		
+		return $rendition;
 	}
 	
 	/**
@@ -1023,12 +1180,17 @@ class NewsItemParse {
 		
 		//Cheking if the content is missing
 		if($newsItemArray['post']['post_content'] === null) {
-			return 400;
+			
+			if(count($newsItemArray['photo']) == 0) {
+				return 400;
+			}
 		}
 		
 		//Cheking if the headline is missing
 		if($newsItemArray['post']['post_title'] === null) {
-			return 400;
+			if(count($newsItemArray['photo']) == 0) {
+				return 400;
+			}
 		}
 		
 		//Cheking if the guid is missing
