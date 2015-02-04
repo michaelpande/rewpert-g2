@@ -1,11 +1,11 @@
 <?php 
 	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing and var_dumping. 
 	
-	include('parser/newsItemParse.php');
-	include('parser/DateParser.php');
-	include('parser/errorLogger.php');
-	include('../../../wp-load.php'); // Potentially creates bugs.
-
+	require('parser/newsItemParse.php');
+	require('parser/DateParser.php');
+	require('parser/errorLogger.php');
+	require('../../../wp-load.php'); // Potentially creates bugs.
+	require('parser/QCodes.php');
 	$DEBUG = false;
 	
 	if(isset($_GET["debug"]) && $_GET["debug"] == true){
@@ -67,9 +67,11 @@
 		// If nothing went wrong during parsing
 		$post = $value['post'];
 		$meta = $value['meta'];
+		$subjects = $value['subjects'];
+
 			
-		if($post != null && $meta != null){
-			$wp_error = insertPost($post, $meta);
+		if($post != null && $meta != null && $subjects != null){
+			$wp_error = insertPost($post, $meta, $subjects);
 			debug("<h3>Returned from Wordpress: </h3>");
 			debug($wp_error);
 			
@@ -133,7 +135,7 @@
 	
 
 	// Inserts the post into the WordPress Database
-	function insertPost($post, $meta){
+	function insertPost($post, $meta, $subjects){
 		
 		debug("<h2>Insert Post: </h2>");
 		
@@ -160,7 +162,6 @@
 				debug("<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>"); // Array Dereferencing (Requires PHP version > 5.4)
 			}
 		}else{
-			
 			$result = wp_insert_post( $post, true); // Creates new post
 		}
 		
@@ -172,6 +173,7 @@
 		if(is_numeric($result) && $meta != null){
 			debug("<h4>Set metadata in Wordpress: </h4>");
 			insertPostMeta($result, $meta);
+			setPostCategories($result, $subjects, $meta['nml2_language']);
 			setHeader(201); // Created
 			
 		}
@@ -197,6 +199,7 @@
 				
 		}
 		
+		
 	}
 	
 	
@@ -204,12 +207,76 @@
 	// Purpose: Sets correct post categories for the post
 	// Challenge: Need array of category IDs from DB.
 	// Solutions: Foreach category string, find or create category id. 
-	function setPostCategories($post_id, $meta){
-		wp_set_post_categories( $post_ID, $post_categories, $append )
-		;
+	function setPostCategories($post_id, $subjects, $lang){
+		
+		$category_id = array();
+
+		//foreach subject in meta
+		foreach($subjects as $key=>$subject){
+			
+			// Have to find match on language 
+			var_dump($subject);
+			foreach($subject['name'] as $nameKey=>$nameVal){
+				$id = null;
+				// If subject with name and correct lanuage is found
+				if($nameVal['lang'] == $lang){
+					// Will use 'name' if set 
+					if($nameVal['text'] != null){
+						$id = createOrGetCategory($nameVal['text']);
+					}else{
+						$result = QCodes::getSubject($subject['qcode'], $lang); 
+						if($result != null){
+							$id = createOrGetCategory($result);
+						}
+					}
+					
+				}
+				
+				if($id != null){
+					// PUSH TO ARRAY
+					array_push($category_id, $id);
+					
+				}
+				
+				
+			}
+			createOrGetCategory($subject);
+			
+		}
+		debug(var_dump($category_id));
+		debug(var_dump($post_id));
+		wp_set_post_categories( $post_id, $category_id, false );
 	}
 
-
+	// Creates and/or returns category ID for given string
+	function createOrGetCategory($cat){
+		if($cat == null){
+			return;
+		}
+		$cat_id = get_cat_ID( $cat);
+		
+		if($cat_id != 0){
+			debug("Found category! " . $cat_id);
+			return $cat_id;
+		}
+		// CREATE CATEGORY AND RETURN ID; wp_insert_category
+		$result = wp_insert_term(
+			$cat,
+			'category',
+			array(
+			  'description'	=> '',
+			  'slug' 		=> ''
+			)
+		);
+	  
+		debug("Result from creation of category: " . var_dump($result));
+		debug("Create or get Category" . get_cat_ID( $cat));
+		return get_cat_id($cat);
+	}
+	
+	
+	
+	
 	// Returns the API key from the Wordpress Database
 	function getAPIkey(){
 		return get_option("nml2-plugin-api-key");
@@ -217,6 +284,7 @@
 	}
 
 
+	
 	
 	
 	
@@ -230,6 +298,10 @@
 			
 		}
 	}
+	
+	
+	
+	
 	
 	
 	
