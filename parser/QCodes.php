@@ -6,7 +6,7 @@
 	
 
 */
-
+require_once('/Database/API.php');
 
 QCodes::test();
 
@@ -16,10 +16,13 @@ class QCodes{
 	
 	public static function test(){
 		
-	require_once('KnowledgeItem/KnowledgeItem.php');
+	
 	//KnowledgeItemParse::test();
+	QCodes::update("KnowledgeItem/test_scene_de.xml");
 	QCodes::update("KnowledgeItem/test_subjectcode.xml");
-	//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB");
+	QCodes::update("KnowledgeItem/test_mediatopic.xml");
+	QCodes::update("KnowledgeItem/test_scene.xml");
+	//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB"); // Max 10/h 
 	
 	
 	/*// Arrange
@@ -93,22 +96,34 @@ class QCodes{
 		require_once('/KnowledgeItem/KnowledgeItem.php');
 		$subjects = KnowledgeItemParse::getQCodes($file);
 		
-		include('/Database/API.php');
+		
 		
 		// Updates DB with the new QCodes. 
-		$db = new SimpleStorage();
-		$db->database_name("Test.db");
+		$db = new SimpleStorage("Test2.db");
+
 		$db->prepare(true);
+		// Update/Insert all values
 		foreach($subjects as $value){
-			$db->update($value['qcode'],"", $value['name']);
+			$db->update($value['qcode'],$value['lang'], serialize($value));
+			
 		}
 		$db->execute();
+		$db->prepare(false);
+		foreach($subjects as $value){
+			$db->remove($value['qcode'],$value['lang']);
+		}
+		
 		
 		echo "<br><br>----CONTENTS----<br><br>";
 		foreach($subjects as $value){
-			echo("SimpleStorage : <br>". $value['qcode'] ." : ". $db->get($value['qcode'],"") . "<br><br>");
-
+			$var = $db->get($value['qcode'],$value['lang']);
+			var_dump(unserialize($var));
+			
 		}
+		
+		
+		
+		
 		
 		
 	}

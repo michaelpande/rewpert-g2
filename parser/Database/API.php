@@ -2,53 +2,48 @@
 
 	// Simple Cache Storage
 	// 		A simple database storage, for storing parameters quickly and easy.
+	// 		By using the prepare(true) statement and executing afterwards, 
+	//		you should make sure you only do one group of queries at the time. As the stacked queries are executed this order Insert, Update, Delete.
+	// 		
 	// 
 	
 	
-	
-	// FIX PREPARED - UPDATES
 	// MORE TESTING
-	// FIX FILENAME (Constructor)
 	// LINUX SAFE URL?
 	
 	
 	
 	//SimpleStorageTest::test();
-	//AdvancedStorageTest::test();
-	//PrepareStorageTest::test();
 	
 	class SimpleStorage{
 		
 		private $db;
 		private $prepare = false; 
 		private $preparedInsert = null;
+		private $preparedUpdate = null;
+		private $preparedRemove = null;
 		private $insertCount = 0;
+		private $updateCount = 0;
+		private $removeCount = 0;
 		private $database_name;
 		
-		function __construct(){
+		function __construct($name = null){
 			global $database_name;
 			
-			$database_name = "SimpleStorage.db";
-			
-		}
-		
-		
-		public function database_name($name){
-			global $database_name;
-			if(isset($name) && is_string($name)){
-				echo $name;
+			$database_name = is_string($name) ? $name : "SimpleStorage.db";
+			if(is_string($name)){
 				$database_name = $name;
-			}
+				return;
+			} 
+			
 		}
-		
-		
 
 		
 		
+
+	 
 		private function db_location(){
 			global $database_name;
-			
-
 			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 				
 				return dirname(__FILE__) . '\\' .$database_name; // Windows
@@ -62,10 +57,15 @@
 		
 		// Method to decide if all insert / update statements should be combined into a few large. Call on Execute after entire statement is prepared.
 		public function prepare($bool){
-			global $prepare;
+			global $prepare, $preparedInsert, $preparedUpdate, $preparedRemove, $insertCount, $updateCount, $removeCount;
 			if(is_bool($bool)){
 				if(!$bool){
 					$preparedInsert = null;
+					$preparedUpdate = null;
+					$preparedRemove = null;
+					$insertCount = 0;
+					$updateCount = 0;
+					$removeCount = 0;
 				}
 				$prepare = $bool;
 			}
@@ -91,19 +91,80 @@
 			}
 		}
 		
+		
+		// Method to combine multiple update queries into one. SQLite has a limitation on number of values to update in one query, so this method will
+		// split the queries to a few every 200 value. 
+		private function prepareUpdate($str){
+			global $preparedUpdate, $updateCount;
+			
+			if($preparedUpdate != null){
+				if($updateCount >= 200){
+					$preparedUpdate = substr_replace($preparedUpdate,";",strlen($preparedUpdate)-1);
+					$preparedUpdate .= "INSERT OR REPLACE INTO SimpleStorage VALUES ";
+					$updateCount = 0;
+				}
+				$preparedUpdate .= "$str ,";
+				$updateCount++;
+			}else{
+				$preparedUpdate = "INSERT OR REPLACE INTO SimpleStorage VALUES ";
+				$preparedUpdate .= "$str ,";
+				$updateCount++;
+			}
+			
+		}
+		
+		// Method to combine multiple delete queries into one. SQLite has a limitation on number of values to delete in one query, so this method will
+		// split the queries to a few every 200 value. 
+		private function prepareDelete($str){
+			global $preparedDelete, $DeleteCount;
+			
+			if($preparedDelete != null){
+				if($DeleteCount >= 20){
+					$preparedDelete = substr_replace($preparedDelete,";",strlen($preparedDelete)-3);
+					$preparedDelete .= "DELETE from SimpleStorage WHERE  "; // DELETE from SimpleStorage WHERE key1 LIKE '$key1'
+					$DeleteCount = 0;
+				}
+				$preparedDelete .= "($str) OR ";
+				$DeleteCount++;
+			}else{
+				$preparedDelete = "DELETE FROM SimpleStorage WHERE ";
+				$preparedDelete .= "($str) OR ";
+				$DeleteCount++;
+			}
+		}
+		
+		
+		
+		
 		// Call on this to execute the prepared statement
 		public function execute(){
-			global $prepare, $preparedInsert;
-			if($prepare != null && $preparedInsert != null){
+			global $prepare, $preparedInsert, $preparedDelete, $preparedUpdate;
+			if($prepare != null && ($preparedInsert != null || $preparedUpdate != null ||  $preparedDelete != null)){
 			
 				try{
 					$db = $this->createDB();
 					echo ("<br>execute() - EXECUTE<br>");
-					$preparedInsert = substr_replace($preparedInsert,";",strlen($preparedInsert)-1);
-
-
-					$result = $db->exec($preparedInsert);
+					
+					if($preparedInsert != null){
+						$preparedInsert = substr_replace($preparedInsert,";",strlen($preparedInsert)-1);
+						$result = $db->exec($preparedInsert);
+					}
+					if($preparedUpdate != null){
+						$preparedUpdate = substr_replace($preparedUpdate,";",strlen($preparedUpdate)-1);
+						$result = $db->exec($preparedUpdate);
+					}
+					if($preparedDelete != null){
+						$preparedDelete = substr_replace($preparedDelete,";",strlen($preparedDelete)-3);
+						$result = $db->exec($preparedDelete);
+						
+					}
+					
+					
+					
 					$preparedInsert = null;
+					$preparedUpdate = null;
+					$preparedDelete = null;
+					
 					return $result;
 				}catch(Exception $e){
 					
@@ -165,7 +226,7 @@
 		
 		// Update or set value with matching id, returns true/false
 		public function update($key1, $key2, $value){
-			
+			global $prepare;
 			if($this->get($key1,$key2) == null){
 				return $this->set($key1,$key2,$value);
 			}
@@ -173,6 +234,12 @@
 			try{
 				$db = $this->createDB();
 				$value = $this->input($value);
+				
+				if($prepare){
+					$this->prepareUpdate("('$key1','$key2','$value','')");
+					return true;
+				}
+				
 				$result = $db->exec("UPDATE SimpleStorage SET val = '$value' WHERE key1 LIKE '$key1' AND key2 LIKE '$key2' ");
 				if($result){
 					return true;
@@ -212,13 +279,19 @@
 		
 		
 		public function remove($key1, $key2){
-	
+			global $prepare;
 			
 			try{
 				$db = $this->createDB();
 				$key1 = $this->input($key1);
 				$key2 = $this->input($key2);
-				$result = $db->exec("DELETE from SimpleStorage WHERE key1 LIKE '$key1'");
+				
+				if($prepare){
+					$this->prepareDelete("key1 LIKE '$key1' AND key2 LIKE '$key2' ");
+					return true;
+				}
+				
+				$result = $db->exec("DELETE from SimpleStorage WHERE key1 LIKE '$key1' AND key2 LIKE '$key2'");
 				if($result > 0){
 					return true;
 				}
@@ -355,110 +428,8 @@
 		}
 		
 	}
+
+		
 	
-
-	class AdvancedStorageTest{
-		
-		public static function test(){
-			
-		
-			// Arrange
-			$idArray = array(
-				'Basic', 
-				'White Space',
-				'Special characters',
-				'More Special Characters',
-				'English',
-				'Chinese',
-				'Norwegian',
-				'QCodes'
-			);
-			// Arrange
-			$id2Array = array(
-				'Basic', 
-				'White Space',
-				'Special characters',
-				'More Special Characters',
-				'English',
-				'Chinese',
-				'Norwegian',
-				'QCodes'
-			);
-			$valueArray = array(
-				'Simple',
-				'Nothing will work',
-				'*\'',
-				'?\%,#¤%"',
-				'This is a test',
-				'这是一个测试',
-				'Dette er en test æøå',
-				'subj:06005000'
-			);
-			$updateArray = array(
-				"Updated",
-				'More whitespace',
-				'\'<>',
-				'@**',
-				'Refresh this',
-				'这刷新',
-				'Oppdater dette åæø',
-				'subj:06005001'
-			);
-			
-			// Test set, get, update, delete
-			for($i = 0; $i < count($idArray); $i++){
-				
-				
-				// Act
-				$id = $idArray[$i];
-				$id2 = $id2Array[$i];
-				$value1 = $valueArray[$i];
-				$updatedValue1 = $updateArray[$i];
-				
-				// Act
-				SimpleStorage::set($id, $id2, $value1);  // SET
-				$answer1 = SimpleStorage::get($id,$id2); // GET
-				SimpleStorage::update($id,$id2, $updatedValue1); // UPDATE
-				$updatedAnswer1 = SimpleStorage::get($id, $id2); // GET
-				SimpleStorage::remove($id, $id2); // DELETE
-				$deleted1 = SimpleStorage::get($id, $id2); // GET
-				
-				
-				// Assert
-				if($answer1 != $value1){
-					echo "<strong>Test</strong> $idArray[$i] - ($i): Set/Get failed:<br>  \"$answer1\" != \"$value1\"<br><br>";
-				}
-				if($updatedAnswer1 != $updatedValue1){
-					echo "<strong>Test</strong> $idArray[$i] - ($i): Update/Get Failed:<br>  \"$updatedAnswer1\" != \"$updatedValue1\"<br><br>";
-				}
-				if($deleted1 != null){
-					echo "<strong>Test</strong> $idArray[$i] - ($i): Delete Failed<br>";
-				}
-			
-			}
-			
-			// Test length
-			
-			SimpleStorage::set("CountThis0","CountThis0","Nothing");
-			SimpleStorage::set("CountThis1","CountThis0","Nothing");
-			
-			if(SimpleStorage::length() != 2){
-					echo "<strong>Test</strong><br> Length should be 2, but is ". SimpleStorage::length()."<br>";
-			}
-			
-			SimpleStorage::remove("CountThis0","CountThis0");
-			SimpleStorage::remove("CountThis1","CountThis0");
-
-			if(SimpleStorage::length() != 0){
-					echo "<strong>Test</strong><br> Length should be 0, but is ". SimpleStorage::length()."<br>";
-			}
-			
-			
-			print("<h2>Test completed.</h2>");
-			
-			
-		}
-		
-	}
 
 ?>

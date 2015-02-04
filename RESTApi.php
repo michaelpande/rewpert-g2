@@ -205,22 +205,9 @@
 	// Challenge: Need array of category IDs from DB.
 	// Solutions: Foreach category string, find or create category id. 
 	function setPostCategories($post_id, $meta){
+		wp_set_post_categories( $post_ID, $post_categories, $append )
 		;
 	}
-	
-	// Not implemented yet
-	// Purpose: Convert to the correct dateformat to post_date and post_date_gmt
-	/*function convertDate($post){
-		
-		// [ Y-m-d H:i:s ]
-		if(isset($post['post_date']) && $post['post_date'] != null){
-			$post['post_date'] = getDateFromString($post['post_date']);
-		}
-		if(isset($post['post_date_gmt']) && $post['post_date_gmt'] != null){
-			$post['post_date_gmt'] = getGMTDateFromString($post['post_date_gmt']);
-		}
-		
-	}*/
 
 
 	// Returns the API key from the Wordpress Database
