@@ -90,7 +90,7 @@ class NewsItemParse {
 																		1 => Same as the index above. Number of indexes depends on number of names
 																			);
 																'type' 	 => string
-																'uri' 	 => strin
+																'uri' 	 => string
 														  1 => same as the index above. Number of indexes depends on number of broader tags under a subjects
 																);
 														  );
@@ -260,23 +260,70 @@ class NewsItemParse {
 		return $users;
 	}
 	
+	/**
+	 * Creates and returns an array containg subjects
+	 *
+	 * This metod uses a DOMXPath query to find all subjects in a newsItem nad return them as an array
+	 *
+	 * @param DOMNode $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array contaning all subjects
+	 * @author Petter Lundberg Olsen
+	 */
+	private static function createSubjectArray($newsItem, $xpath) {
+		$subjects = array( );
+		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: contentMeta/subject
+		*/
+		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject", $newsItem);
+		
+		//This loop creates an array contaning information about each subject
+		foreach($nodelist as $node) {
+			$subject = array(
+				'qcode'   => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name' 	  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
+				'type' 	  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
+				'uri' 	  => NewsItemParse::getSubjectUri($node, $xpath), //string, subject uri
+				'sameAs'  => NewsItemParse::getSubjectSameAs($node, $xpath), //array, an array containig all subjects sameAs tags
+				'broader' => NewsItemParse::getSubjectBroader($node, $xpath) //array, an array containg all subjects broader tags
+			);
+			
+			array_push($subjects, $subject);
+		}
+		
+		return $subjects;
+	}
+	
+	/**
+	 * Greates and returns an array containg all photos
+	 *
+	 * This metod uses DOMXPath to find all photos in a news message and returns them in an array
+	 *
+	 * @param DOMNode $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array contaning all subjects
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function createPhotoArray($newsItem, $xpath) {
 		$photos = array( );
 		
+		/*Query path that continus from first query at the start of the document.
+		  Path without XML namespace: contentSet/remoteContent
+		*/
 		$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:remoteContent", $newsItem);
 		
+		//This loop creates an array contaning information about each photo
 		foreach($nodelist as $node) {
 			$photo = array( 
-				'href' => NewsItemParse::getPhotoHref($node, $xpath),
-				'size' => NewsItemParse::getPhotoSize($node, $xpath),
-				'width' => NewsItemParse::getPhotoWidth($node, $xpath),
-				'height' => NewsItemParse::getPhotoHeight($node, $xpath),
-				'contenttype' => NewsItemParse::getPhotoContenttype($node, $xpath),
-				'colourspace' => NewsItemParse::getPhotoColourspace($node, $xpath),
-				'rendition' => NewsItemParse::getPhotoRendition($node, $xpath)
+				'href' 		  => NewsItemParse::getPhotoHref($node, $xpath), //string, the source of the image
+				'size' 		  => NewsItemParse::getPhotoSize($node, $xpath), //string, the size of the image in bytes 
+				'width' 	  => NewsItemParse::getPhotoWidth($node, $xpath), //string, the width of the picture in px
+				'height' 	  => NewsItemParse::getPhotoHeight($node, $xpath), //string, the height of the image
+				'contenttype' => NewsItemParse::getPhotoContenttype($node, $xpath), //string, what type of file the image is
+				'colourspace' => NewsItemParse::getPhotoColourspace($node, $xpath), //stirng, what colorspace til image is
+				'rendition'   => NewsItemParse::getPhotoRendition($node, $xpath) //string, tells if the image is higres, ment for web, or is a thumbnail
 			);
-			
-			var_dump($photo);
 			
 			array_push($photos, $photo);
 		}
@@ -806,8 +853,8 @@ class NewsItemParse {
 		*/
 		$nodelist = $xpath->query("@uri", $cTag);
 		
-		/*Sets the results of the query above on the return variable if anny.
-		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
 		*/ 
 		foreach($nodelist as $node) {
 			$uri = $node->nodeValue;
@@ -817,63 +864,28 @@ class NewsItemParse {
 	}
 	
 	/**
-	 * Creates and returns an array containg subjects
+	 * Creates and returns an array containing subjects
 	 *
-	 * This metod uses a DOMXPath query to find all subjects in a newsItem nad return them as an array
+	 * This method uses a DOMXPath query to find all subjects in a newsItem and return them as an array
 	 *
-	 * @param DOMNode $newsItem XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $subjectTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return array contaning all subjects
+	 * @return array containing all subjects
 	 * @author Petter Lundberg Olsen
 	 */
-	private static function createSubjectArray($newsItem, $xpath) {
-		$subjects = array( );
-		
-		/*Query path that continus from first query at the start of the document.
-		  Path without XML namespace: contentMeta/subject
-		*/
-		$nodelist = $xpath->query("newsMessage:contentMeta/newsMessage:subject", $newsItem);
-		
-		//This loop creates an array contaning information about each subject
-		foreach($nodelist as $node) {
-			$subject = array(
-				'qcode'   => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
-				'name' 	  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
-				'type' 	  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
-				'uri' 	  => NewsItemParse::getSubjectUri($node, $xpath), //string, subject uri
-				'sameAs'  => NewsItemParse::createSubjectSameAsArray($node, $xpath), //array, an array containig all subjects sameAs tags
-				'broader' => NewsItemParse::createSubjectBroaderArray($node, $xpath) //array, an array containg all subjects broader tags
-			);
-			
-			array_push($subjects, $subject);
-		}
-		
-		return $subjects;
-	}
-	
-	/**
-	 * Creates and returns an array containg subjects
-	 *
-	 * This metod uses a DOMXPath query to find all subjects in a newsItem nad return them as an array
-	 *
-	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
-	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return array contaning all subjects
-	 * @author Petter Lundberg Olsen
-	 */
-	private static function createSubjectSameAsArray($subjectTag, $xpath) {
+	private static function getSubjectSameAs($subjectTag, $xpath) {
 		$sameAsArray = array( );
 		
-		/*Query path that continus from first query at the start of the document.
+		/*This XPath query is a subquery from the query in the method createSubjectArray
 		  Path without XML namespace: sameAs
 		*/
 		$nodelist = $xpath->query("newsMessage:sameAs", $subjectTag);
 		
-		//This loop creates an array contaning information about each subject
+		//This loop creates an array containing information about each subject
 		foreach($nodelist as $node) {
 			$sameAs = array(
 				'qcode' => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
-				'name'  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
+				'name'  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containing name and its attributes
 				'type'  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
 				'uri'   => NewsItemParse::getSubjectUri($node, $xpath) //string, subject uri
 			);
@@ -884,7 +896,7 @@ class NewsItemParse {
 		return $sameAsArray;
 	}
 	
-	private static function createSubjectBroaderArray($subjectTag, $xpath) {
+	private static function getSubjectBroader($subjectTag, $xpath) {
 		$broaderArray = array( );
 		
 		$nodelist = $xpath->query("newsMessage:broader", $subjectTag);
@@ -906,9 +918,9 @@ class NewsItemParse {
 	/**
 	 * Finds and returns a subjects qcode
 	 *
-	 * This metod uses a DOMXPath query to find and return a subjcts qcode
+	 * This method uses a DOMXPath query to find and return a subjects qcode
 	 *
-	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $subjectTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return string qcode, null if no qcode present
 	 * @author Petter Lundberg Olsen
@@ -916,13 +928,13 @@ class NewsItemParse {
 	private static function getSubjectQcode($subjectTag, $xpath) {
 		$qcode = null;
 		
-		/*This XPath query is a subquery from the query in the metod createSubjectArray/createSubjectSameAsArray
+		/*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
 		  Path without XML namespace: qcode-attribute
 		*/
 		$nodelist = $xpath->query("@qcode", $subjectTag);
 		
-		/*Sets the results of the query above on the return variable if anny.
-		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
 		*/ 
 		foreach($nodelist as $node) {
 			$qcode = $node->nodeValue;
@@ -933,14 +945,14 @@ class NewsItemParse {
 	
 	
 	/**
-	 * Find and returns an array containg name and other data
+	 * Find and returns an array containing name and other data
 	 *
 	 * This metod uses a DOMEXPath query to find a subjects name and put it and other data about it in an array
 	 * that are being added in the array of names
 	 *
-	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $subjectTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return array containg name arrays
+	 * @return array containing name arrays
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getSubjectName($subjectTag, $xpath) {
@@ -966,26 +978,26 @@ class NewsItemParse {
 	}
 	
 	/**
-	 * Find and return a subject names langugage
+	 * Find and return a subject names language
 	 *
-	 * This metod uses a DOMEXPath query to find a subjects name language and put it and other data about it in an array
+	 * This method uses a DOMEXPath query to find a subjects name language and put it and other data about it in an array
 	 * that are being added in the array of names
 	 *
-	 * @param DOMNode $nameTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $nameTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
-	 * @return string langugage, null if no language is present
+	 * @return string language, null if no language is present
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getSubjectLang($nameTag, $xpath) {
 		$lang = null;
 		
-		/*This XPath query is a subquery from the query in the metod getSubjectName
+		/*This XPath query is a subquery from the query in the method getSubjectName
 		  Path without XML namespace: lang-attribute
 		*/
 		$nodelist = $xpath->query("@xml:lang", $nameTag);
 		
-		/*Sets the results of the query above on the return variable if anny.
-		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
 		*/ 
 		foreach($nodelist as $node) {
 			$lang = $node->nodeValue;
@@ -997,22 +1009,22 @@ class NewsItemParse {
 	/**
 	 * Finds and returns a subject names role
 	 *
-	 * This metod uses a DOMXPath query to find and return the role of a name tag under a subject
+	 * This method uses a DOMXPath query to find and return the role of a name tag under a subject
 	 *
-	 * @param DOMNode $nameTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $nameTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return string role null if no role is present
 	 */
 	private static function getSubjectRole($nameTag, $xpath) {
 		 $role = null;
 		 
-		 /*This XPath query is a subquery from the query in the metod getSubjectName
+		 /*This XPath query is a subquery from the query in the method getSubjectName
 		  Path without XML namespace: role-attribute
 		*/
 		 $nodelist = $xpath->query("@role", $nameTag);
 		 
-		 /*Sets the results of the query above on the return variable if anny.
-		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		 /*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
 		*/ 
 		 foreach($nodelist as $node) {
 			$role = $node->nodeValue;
@@ -1024,9 +1036,9 @@ class NewsItemParse {
 	/**
 	 * Finds and returns a subjects type
 	 *
-	 * This metod uses a DOMXPath query to find and return a subjects role attribute
+	 * This method uses a DOMXPath query to find and return a subjects role attribute
 	 *
-	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $subjectTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return string type, null if no type present
 	 * @author Petter Lundberg Olsen
@@ -1034,13 +1046,13 @@ class NewsItemParse {
 	private static function getSubjectType($subjectTag, $xpath) {
 		 $type = null;
 		 
-		/*This XPath query is a subquery from the query in the metod createSubjectArray/createSubjectSameAsArray
+		/*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
 		  Path without XML namespace: type-attribute
 		*/
 		 $nodelist = $xpath->query("@type", $subjectTag);
 		 
-		 /*Sets the results of the query above on the return variable if anny.
-		  The length of the $nodelist shuld only be 1 if the newsML is created correctly.
+		 /*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
 		*/ 
 		 foreach($nodelist as $node) {
 			$type = $node->nodeValue;
@@ -1052,9 +1064,9 @@ class NewsItemParse {
 	/**
 	 * Finds and returns subject uri
 	 *
-	 * This metod uses a DOMXPath query to find and return a subjects uri
+	 * This method uses a DOMXPath query to find and return a subjects uri
 	 *
-	 * @param DOMNode $subjectTag XPath query from an erlier part of the document that the new query shal be preformed on
+	 * @param DOMNode $subjectTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return string uri, null if no uri present
 	 * @author Petter Lundberg Olsen
@@ -1062,13 +1074,13 @@ class NewsItemParse {
 	private static function getSubjectUri($subjectTag, $xpath) {
 		$uri = null;
 		
-		/*This XPath query is a subquery from the query in the metod createSubjectArray/createSubjectSameAsArray
+		/*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
 		  Path without XML namespace: type-attribute
 		*/
 		$nodelist = $xpath->query("@uri", $subjectTag);
 		
-		/*Sets the results of the query above on the return variable if anny.
-		  The length of the 4$nodelist shuld only be 1 if the newsML is created correctly.
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
 		*/ 
 		foreach($nodelist as $node) {
 			$uri = $node->nodeValue;
@@ -1077,11 +1089,27 @@ class NewsItemParse {
 		return $uri;
 	}
 	
+	/**
+	 * Finds and returns a remoteContent href
+	 *
+	 * This method uses a DOMXPath query to find a remoteContent tags href attribute
+	 *
+	 * @param DOMNode $remoteContent XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string href, null if no href present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoHref($remoteContent, $xpath) {
 		$href = null;
 		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: href-attribute
+		*/
 		$nodelist = $xpath->query("@href", $remoteContent);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$href = $node->nodeValue;
 		}
@@ -1089,11 +1117,27 @@ class NewsItemParse {
 		return $href;
 	}
 	
+	/**
+	 * Finds and returns a remoteContent size
+	 *
+	 * This method uses a DOMXPath query to find a remoteContent tags size attribute
+	 *
+	 * @param DOMNode $remoteContent XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string size, null if no size present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoSize($remoteContent, $xpath) {
 		$size = null;
 		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: size-attribute
+		*/
 		$nodelist = $xpath->query("@size", $remoteContent);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$size = $node->nodeValue;
 		}
@@ -1101,11 +1145,27 @@ class NewsItemParse {
 		return $size;
 	}
 	
+	/**
+	 * Finds and returns a remoteContent width
+	 *
+	 * This method uses a DOMXPath query to find a remoteContent tags width attribute
+	 *
+	 * @param DOMNode $remoteContent XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string width, null if no width present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoWidth($remoteContent, $xpath) {
 		$width = null;
 		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: width-attribute
+		*/
 		$nodelist = $xpath->query("@width", $remoteContent);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$width = $node->nodeValue;
 		}
@@ -1113,11 +1173,27 @@ class NewsItemParse {
 		return $width;
 	}
 	
+	/**
+	 * Finds and returns a remoteContent height
+	 *
+	 * This method uses a DOMXPath query to find a remoteContent tags height attribute
+	 *
+	 * @param DOMNode $remoteContent XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string height, null if no height present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoHeight($remoteContent, $xpath) {
 		$height = null;
 		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: height-attribute
+		*/
 		$nodelist = $xpath->query("@height", $remoteContent);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$height = $node->nodeValue;
 		}
@@ -1125,11 +1201,27 @@ class NewsItemParse {
 		return $height;
 	}
 	
+	/**
+	 * Finds and returns a remoteContent content type
+	 *
+	 * This method uses a DOMXPath query to find a remoteContent tags contenttype attribute
+	 *
+	 * @param DOMNode $remoteContent XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string contenttype, null if no contenttype present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoContenttype($remoteContent, $xpath) {
 		$contenttype = null;
 		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: contenttype-attribute
+		*/
 		$nodelist = $xpath->query("@contenttype", $remoteContent);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$contenttype = $node->nodeValue;
 		}
@@ -1137,11 +1229,27 @@ class NewsItemParse {
 		return $contenttype;
 	}
 	
+	/**
+	 * Finds and returns a remoteContent colourspace
+	 *
+	 * This method uses a DOMXPath query to find a remoteContent tags colourspace attribute
+	 *
+	 * @param DOMNode $remoteContent XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string colourspace, null if no colourspace present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoColourspace($remtoeContent, $xpath) {
 		$colourspace = null;
 		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: colourspace-attribute
+		*/
 		$nodelist = $xpath->query("@colourspace", $remtoeContent);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$colourspace = $node->nodeValue;
 		}
@@ -1149,11 +1257,27 @@ class NewsItemParse {
 		return $colourspace;
 	}
 	
+	/**
+	 * Finds and returns a remoteContent rendition
+	 *
+	 * This method uses a DOMXPath query to find a remoteContent tags rendition attribute
+	 *
+	 * @param DOMNode $remoteContent XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string rendition, null if no rendition present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoRendition($remoteContent, $xpath) {
 		$rendition = null;
 		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: rendition-attribute
+		*/
 		$nodelist = $xpath->query("@rendition", $remoteContent);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
 		foreach($nodelist as $node) {
 			$rendition = $node->nodeValue;
 		}
@@ -1162,13 +1286,13 @@ class NewsItemParse {
 	}
 	
 	/**
-	 * Checks if some of the parts of the data being sendt to Wordpress is mising and setting status code acordingly
+	 * Checks if some of the parts of the data being sent to Wordpress is missing and setting status code accordingly
 	 *
 	 * Checks first if 'status_code' in $returnArray is set to something diferent then 200 and returns that number if it dose.
-	 * Checks then if any of the more inportant parts of the meta and post arrays are missing, and if the are returning 400.
-	 * The metod returns 200 if everthing is OK
+	 * Checks then if any of the more important parts of the meta and post arrays are missing, and if the are returning 400.
+	 * The method returns 200 if everything is OK
 	 *
-	 * @param array $returnArray The array containg 'status_code'
+	 * @param array $returnArray The array containing 'status_code'
 	 * @param array $newsItemArray The array holding all the data that are to be checked
 	 * @return int 200 if all OK, 400 if something is missing and 'status_code' value if not 200
 	 * @author Petter Lundberg Olsen
@@ -1178,7 +1302,7 @@ class NewsItemParse {
 			return $returnArray['status_code'];
 		}
 		
-		//Cheking if the content is missing
+		//Checking if the content is missing
 		if($newsItemArray['post']['post_content'] === null) {
 			
 			if(count($newsItemArray['photo']) == 0) {
@@ -1186,19 +1310,19 @@ class NewsItemParse {
 			}
 		}
 		
-		//Cheking if the headline is missing
+		//Checking if the headline is missing
 		if($newsItemArray['post']['post_title'] === null) {
 			if(count($newsItemArray['photo']) == 0) {
 				return 400;
 			}
 		}
 		
-		//Cheking if the guid is missing
+		//Checking if the guid is missing
 		if($newsItemArray['meta']['nml2_guid'] === null) {
 			return 400;
 		}
 		
-		//Cheking if the version number is missing
+		//Checking if the version number is missing
 		if($newsItemArray['meta']['nml2_version'] === null) {
 			return 400;
 		}
@@ -1207,13 +1331,13 @@ class NewsItemParse {
 	} 
 
 	/**
-	 * A metod that return ether 'publish' or 'future' depending in embargo.
+	 * A method that return ether 'publish' or 'future' depending in embargo.
 	 * 
-	 * This metod is used to change the 'post_status' in the $post array. Returns if 'publish' if
+	 * This method is used to change the 'post_status' in the $post array. Returns if 'publish' if
 	 * $embargo is set. Returns 'future' if $embargo is null.
 	 * 
 	 * @param string $embargo Embargo date as string, may be null
-	 * @reutrn string 'publish' or 'future'
+	 * @return string 'publish' or 'future'
 	 * @author Petter Lundberg Olsen
 	 */
 	public static function setEbargoState($embargo) {
