@@ -70,7 +70,7 @@
 		$subjects = $value['subjects'];
 
 			
-		if($post != null && $meta != null && $subjects != null){
+		if($post != null && $meta != null){
 			$wp_error = insertPost($post, $meta, $subjects);
 			debug("<h3>Returned from Wordpress: </h3>");
 			debug($wp_error);
@@ -208,6 +208,7 @@
 	// Challenge: Need array of category IDs from DB.
 	// Solutions: Foreach category string, find or create category id. 
 	function setPostCategories($post_id, $subjects, $lang){
+		debug("<h2>setPostCategories</h2>");
 		
 		$category_id = array();
 
@@ -221,7 +222,10 @@
 				// If subject with name and correct lanuage is found
 				if($nameVal['lang'] == $lang){
 					// Will use 'name' if set 
-					if($nameVal['text'] != null){
+					debug("Lang is $lang");
+					if($nameVal['text'] != null && $nameVal['role'] != "nrol:mnemonic"){
+						debug("Text and role is OK.");
+						QCodes::setSubject($subject['qcode'], $lang, $nameVal['text']);
 						$id = createOrGetCategory($nameVal['text']);
 					}else{
 						$result = QCodes::getSubject($subject['qcode'], $lang); 
@@ -302,10 +306,35 @@
 	
 	
 	
+	function setAuthors(){
+		
+		// Create or get author ID
+		// Save nml2_meta with list of strings for post. 
+		
+		
+	}
 	
 	
-	
-	
+	function createOrGetAuthor($auth){
+		if($auth == null){
+			return;
+		}
+		$auth_id = get_cat_ID( $auth);
+		
+		if($auth_id != 0){
+			debug("Found category! " . $auth_id);
+			return $auth_id;
+		}
+		// CREATE CATEGORY AND RETURN ID; wp_insert_category
+		$email = "";
+		$password = "";
+		
+		$result = wp_create_user ( $email, $password, $email );
+	  
+		debug("Result from creation of category: " . var_dump($result));
+		debug("Create or get Category" . get_cat_ID( $auth));
+		return get_cat_id($auth);
+	}
 	
 	
 	

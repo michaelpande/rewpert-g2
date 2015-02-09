@@ -48,6 +48,14 @@ class QCodes{
 	}	
 		
 		
+	public static function setSubject($qcode, $lang, $value){
+		$lang = ($lang == null) ? "" : $lang; // Guarantees a set value.
+		$qcode = ($qcode == null) ? "" : $qcode; // Guarantees a set value.
+		$value = ($value == null) ? "" : $value; // Guarantees a set value.
+		$db = new SimpleStorage();
+		$db->update($qcode, $lang,$value);
+	}	
+		
 	// Update qcodes by URL or File	
 	public static function update($file){
 		

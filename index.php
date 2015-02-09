@@ -20,6 +20,7 @@
 	//include('parser/wpCommunication.php');
 	
 	add_action('wp_ajax_newsml_ajax_insert_post', 'newsml_ajax_insert_handler');
+	add_action('nml2_get_all_authors','nml2_get_all_authors');
 	//add_action('wp_ajax_nopriv_newsml_ajax_insert_post', 'newsml_ajax_insert_handler');
 	
 	
@@ -46,15 +47,24 @@
 
         include("admin_panel.php");
 
-
-
-
-
-
-
     }
 
-
+	
+	
+	
+	// This method is used to get multiple authors.
+	/*
+	if(function_exists('nml2_get_all_authors'))
+   				nml2_get_all_authors();
+			else
+    				the_author_posts_link();
+	
+	*/
+	function nml2_get_all_authors(){
+		echo "Author 1, Author 2, Author 3";
+	}
+	
+	
 
 
     function EnqueueScripts(){
