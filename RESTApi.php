@@ -209,18 +209,20 @@
 	// Solutions: Foreach category string, find or create category id. 
 	function setPostCategories($post_id, $subjects, $lang){
 		debug("<h2>setPostCategories</h2>");
-		
+		debug("<strong>Language: </strong> $lang");
+		var_dump($subjects);
 		$category_id = array();
 
+		
 		//foreach subject in meta
 		foreach($subjects as $key=>$subject){
-			
+			$id = null;
 			// Have to find match on language 
 			var_dump($subject);
 			foreach($subject['name'] as $nameKey=>$nameVal){
 				$id = null;
 				// If subject with name and correct lanuage is found
-				if($nameVal['lang'] == $lang){
+				if($nameVal['lang'] == $lang || $nameVal['lang'] == null){
 					// Will use 'name' if set 
 					debug("Lang is $lang");
 					if($nameVal['text'] != null && $nameVal['role'] != "nrol:mnemonic"){
@@ -228,13 +230,19 @@
 						QCodes::setSubject($subject['qcode'], $lang, $nameVal['text']);
 						$id = createOrGetCategory($nameVal['text']);
 					}else{
+						debug("Checking for existing category..");
 						$result = QCodes::getSubject($subject['qcode'], $lang); 
 						if($result != null){
-							$id = createOrGetCategory($result);
+							$id = createOrGetCategory($result['name']);
 						}
 					}
 					
+				}else{
+					debug("GET SUBJECT: " .$subject['qcode'].", $lang");
+					$id = createOrGetCategory(QCodes::getSubject($subject['qcode'], $lang));
 				}
+				
+				
 				
 				if($id != null){
 					// PUSH TO ARRAY
@@ -244,6 +252,20 @@
 				
 				
 			}
+			
+			if($id == null){
+				debug("GET SUBJECT: " .$subject['qcode'].", $lang");
+				$result = QCodes::getSubject($subject['qcode'], $lang); 
+				var_dump($result);
+				if($result != null){
+					$id = createOrGetCategory($result['name']);
+					array_push($category_id, $id);
+				}	
+				
+			}
+			
+			
+			
 			createOrGetCategory($subject);
 			
 		}
@@ -332,7 +354,7 @@
 		$result = wp_create_user ( $email, $password, $email );
 	  
 		debug("Result from creation of category: " . var_dump($result));
-		debug("Create or get Category" . get_cat_ID( $auth));
+		debug("Create or get Author" . get_cat_ID( $auth));
 		return get_cat_id($auth);
 	}
 	

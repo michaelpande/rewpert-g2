@@ -15,7 +15,7 @@ class QCodes{
 		
 	
 		QCodes::update("KnowledgeItem/test_scene_de.xml");
-		QCodes::update("KnowledgeItem/test_subjectcode.xml");
+		QCodes::update("KnowledgeItem/test_subjectcode-en.xml");
 		QCodes::update("KnowledgeItem/test_mediatopic.xml");
 		QCodes::update("KnowledgeItem/test_scene.xml");
 		//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB"); // Max 10/h 
@@ -27,9 +27,9 @@ class QCodes{
 	public static function getSubject($qcode, $lang){
 		$lang = ($lang == null) ? "" : $lang; // Guarantees a set value.
 		$qcode = ($qcode == null) ? "" : $qcode; // Guarantees a set value.
-		
+		echo "<br>getSubject($qcode , $lang);<br>";
 		$db = new SimpleStorage();
-		return $db->get($qcode,$lang);
+		return unserialize($db->get($qcode,$lang));
 
 	}	
 	
@@ -53,7 +53,7 @@ class QCodes{
 		$qcode = ($qcode == null) ? "" : $qcode; // Guarantees a set value.
 		$value = ($value == null) ? "" : $value; // Guarantees a set value.
 		$db = new SimpleStorage();
-		$db->update($qcode, $lang,$value);
+		$db->update($qcode, $lang,serialize($value));
 	}	
 		
 	// Update qcodes by URL or File	
@@ -71,11 +71,7 @@ class QCodes{
 			
 		}
 		$db->execute();
-		$db->prepare(false);
-		foreach($subjects as $value){
-			$db->remove($value['qcode'],$value['lang']);
-		}
-		$db->execute();
+		
 		
 		echo "<br><br>----CONTENTS----<br><br>";
 		foreach($subjects as $value){
