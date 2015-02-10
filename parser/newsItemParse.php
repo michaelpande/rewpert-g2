@@ -218,16 +218,15 @@ class NewsItemParse {
 			'nml2_embarogDate' 	  	=> NewsItemParse::getMetaEmbargo($newsItem, $xpath), //string, timestamp of the embargo
 			'nml2_newsMessageSendt' => NewsItemParse::getMetaSentDate($xpath), //string, timestamp from when the newsMessage where sendt
 			'nml2_language'			=> NewsItemParse::getMetaLanguage($newsItem, $xpath), //string, the language of the content in the newsItem
+			'nml2_copyrightHolder' 	=> NewsItemParse::getMetaCopyrightHolder($newsItem, $xpath),
+			'nml2_copyrightNotice' 	=> NewsItemParse::getMetaCopyrightNotice($newsItem, $xpath),
 		);
 		
 		return $meta;
 	}
 	
 	/**
-	 * Creates and returns an array contaning creators and contributors
-	 *
-	 * This metod creaetes and returns an array containg to inner arrays, on is a list of a newsItems creaotrs, and the other a list of its contributors
-	 *
+	 * Need new coments
 	 * @param DOMNode $newsItem XPath query result from an erlier part of the document that a new query shal be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return array
@@ -263,8 +262,6 @@ class NewsItemParse {
 			
 			array_push($users, $user);
 		}
-		
-		var_dump($users);
 		
 		return $users;
 	}
@@ -681,6 +678,30 @@ class NewsItemParse {
 		}
 		
 		return $language;
+	}
+	
+	private static function getMetaCopyrightHolder($newsItem, $xpath) {
+		$copyrightHolder = null;
+		
+		$nodelist = $xpath->query("newsMessage:rightsInfo/newsMessage:copyrightHolder/newsMessage:name", $newsItem);
+		
+		foreach($nodelist as $node) {
+			$copyrightHolder = $node->nodeValue;
+		}
+		
+		return $copyrightHolder;
+	}
+	
+	private static function getMetaCopyrightNotice($newsItem, $xpath) {
+		$copyrightNotice = null;
+		
+		$nodelist = $xpath->query("newsMessage:rightsInfo/newsMessage:copyrightNotice", $newsItem);
+		
+		foreach($nodelist as $node) {
+			$copyrightNotice = $node->nodeValue;
+		}
+		
+		return $copyrightNotice;
 	}
 
 	/**
