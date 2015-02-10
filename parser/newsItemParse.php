@@ -34,7 +34,7 @@ class NewsItemParse {
 													0 => $user = array(
 															'user_login'  => string
 															'description' => string
-															'nml2_qude'	  => string
+															'nml2_qcode'	  => string
 															'nml2_uri'	  => string
 														  );
 													1 => Same as the index above. Number of indexes dependes on number of creators
@@ -43,7 +43,7 @@ class NewsItemParse {
 													0 => $user array(
 															'user_login'  => string
 															'description' => string
-															'nml2_qude'	  => string
+															'nml2_qcode'	  => string
 															'nml2_uri'	  => string
 												         );
 													1 => Same as the index above. Number of indexes dependes on number of contributors
@@ -332,7 +332,7 @@ class NewsItemParse {
 	}
 	
 	/**
-	 * Finds and returns content of a newsItem
+	 * Finds and returns content of	 a newsItem
 	 *
 	 * This metod uses a DOMXPath query to find and return the main content of a newsarticel in a given newsItem
 	 *
@@ -698,6 +698,7 @@ class NewsItemParse {
 			$user = array(
 				'user_login' 	=> NewsItemParse::getUserName($node, $xpath), //string login_name of the user
 				'description'	=> NewsItemParse::getUserDescription($node, $xpath), //string, descibing the role of the user
+				'user_email'	=> NewsItemParse::getUserEmail($node, $xpath),
 				'nml2_qcode'	=> NewsItemParse::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
 				'nml2_uri'		=> NewsItemParse::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
@@ -732,9 +733,12 @@ class NewsItemParse {
 			$user = array(
 				'user_login' 	=> NewsItemParse::getUserName($node, $xpath), //string login_name of the user
 				'description'	=> NewsItemParse::getUserDescription($node, $xpath), //string, descibing the role of the user
+				'user_email'	=> NewsItemParse::getUserEmail($node, $xpath),
 				'nml2_qude'		=> NewsItemParse::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
 				'nml2_uri'		=> NewsItemParse::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
+			
+			var_dump($user);
 			
 			array_push($contributor, $user);
 		}
@@ -805,6 +809,22 @@ class NewsItemParse {
 		}
 		
 		return $description;
+	}
+	
+	private static function getUserEmail($cTag, $xpath) {
+		$email = null;
+		
+		$nodelist = $xpath->query("newsMessage:personDetails/newsMessage:contactInfo/newsMessage:email", $cTag);
+		
+		if($nodelist->length == 0) {
+			return "test";
+		}
+		
+		foreach($nodelist as $node) {
+			$email = $node->nodeValue;
+		}
+		
+		return $email;
 	}
 	
 	/**
@@ -1306,6 +1326,7 @@ class NewsItemParse {
 		if($newsItemArray['post']['post_content'] === null) {
 			
 			if(count($newsItemArray['photo']) == 0) {
+				echo("test");
 				return 400;
 			}
 		}
@@ -1313,17 +1334,20 @@ class NewsItemParse {
 		//Checking if the headline is missing
 		if($newsItemArray['post']['post_title'] === null) {
 			if(count($newsItemArray['photo']) == 0) {
+				echo("test1");
 				return 400;
 			}
 		}
 		
 		//Checking if the guid is missing
 		if($newsItemArray['meta']['nml2_guid'] === null) {
+			echo("test2");
 			return 400;
 		}
 		
 		//Checking if the version number is missing
 		if($newsItemArray['meta']['nml2_version'] === null) {
+			echo("test3");
 			return 400;
 		}
 
