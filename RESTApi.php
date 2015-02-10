@@ -279,6 +279,8 @@
 		if($cat == null){
 			return;
 		}
+		
+		$cat = ucfirst($cat);
 		$cat_id = get_cat_ID( $cat);
 		
 		if($cat_id != 0){
