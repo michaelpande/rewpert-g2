@@ -362,27 +362,37 @@ class NewsItemParse {
 		$content = null;
 		
 		/*Query path that continues from first query at the start of the document.
-		  Path without XML namespace: contentSet/inlineXML/html/body
+		  Path without XML namespace: contentSet/inlineXML/html/body/article/div it will only choose the div whit a itemprop attribute = articleBody
 		*/
-		$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:inlineXML/html:html/html:body", $newsItem);
+		$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem);
 		
 		if($nodelist->length == 0) {
-			
 			/*Trying this query if the above query  gives no result.
-			  Query path that continues from first query at the start of the document.
-			  Path without XML namespace: contentSet/inlineXML/nitf/body/body.content
+			Query path that continues from first query at the start of the document.
+			Path without XML namespace: contentSet/inlineXML/html/body
 			*/  
-			$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:inlineXML/nitf:nitf/nitf:body/nitf:body.content", $newsItem);
+			$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:inlineXML/html:html/html:body]", $newsItem);
 			
 			if($nodelist->length == 0) {
-			
+				
 				/*Trying this query if the above query  gives no result.
 				  Query path that continues from first query at the start of the document.
-				  Path without XML namespace: contentSet/inlineData
+				  Path without XML namespace: contentSet/inlineXML/nitf/body/body.content
 				*/  
-				$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:inlineData", $newsItem);
+				$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:inlineXML/nitf:nitf/nitf:body/nitf:body.content", $newsItem);
+				
+				if($nodelist->length == 0) {
+				
+					/*Trying this query if the above query  gives no result.
+					  Query path that continues from first query at the start of the document.
+					  Path without XML namespace: contentSet/inlineData
+					*/  
+					$nodelist = $xpath->query("newsMessage:contentSet/newsMessage:inlineData", $newsItem);
+				}
 			}
 		}
+		
+		
 		
 		/*Sets the results of the query above on the return variable if any
 		  The length of the $nodelist should only be 1 if the newsML is created correctly
@@ -691,11 +701,27 @@ class NewsItemParse {
 		return $language;
 	}
 	
+	/**
+	 * Finds and returns the copyright holder of the newsItem
+	 *
+	 * This method finds the copyright holder of the content in a NewsML-G2 document using DOMXPath and returns it as a string
+	 *
+	 * @param DOMNode $newsItem XPath query result from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string The copyright holder of the news article, null if no copyright present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getMetaCopyrightHolder($newsItem, $xpath) {
 		$copyrightHolder = null;
 		
+		/*Query path that continues from first query at the start of the document.
+		  Path without XML namespace: rightsInfo/copyrightHolder/name
+		*/
 		$nodelist = $xpath->query("newsMessage:rightsInfo/newsMessage:copyrightHolder/newsMessage:name", $newsItem);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/
 		foreach($nodelist as $node) {
 			$copyrightHolder = $node->nodeValue;
 		}
@@ -703,11 +729,27 @@ class NewsItemParse {
 		return $copyrightHolder;
 	}
 	
+	/**
+	 * Finds and returns the copyright notice of the newsItem
+	 *
+	 * This method finds the copyright notice of the content in a NewsML-G2 document using DOMXPath and returns it as a string
+	 *
+	 * @param DOMNode $newsItem XPath query result from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string The copyright notice of the news article, null if no copyright present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getMetaCopyrightNotice($newsItem, $xpath) {
 		$copyrightNotice = null;
 		
+		/*Query path that continues from first query at the start of the document.
+		  Path without XML namespace: rightsInfo/copyrightNotice
+		*/
 		$nodelist = $xpath->query("newsMessage:rightsInfo/newsMessage:copyrightNotice", $newsItem);
 		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/
 		foreach($nodelist as $node) {
 			$copyrightNotice = $node->nodeValue;
 		}
@@ -780,6 +822,16 @@ class NewsItemParse {
 		return $description;
 	}
 	
+	/**
+	 * Finds and retruns an user email
+	 *
+	 * This method uses a DOMXPath query to find and return the email of creator/contributor
+	 *
+	 * @param DOMNode $cTag XPath query result congaing one creator/contributor that is used in a sub-query in this method
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string email, null if no email present
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getUserEmail($cTag, $xpath) {
 		$email = null;
 		
@@ -851,7 +903,7 @@ class NewsItemParse {
 	/**
 	 * Creates and returns an array containing subjects
 	 *
-	 * This method uses a DOMXPath query to find all subjects in a newsItem and return them as an array
+	 * This method uses a DOMXPath query to find all sameAs tags in a subject and return them as an array
 	 *
 	 * @param DOMNode $subjectTag XPath query from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
@@ -881,6 +933,16 @@ class NewsItemParse {
 		return $sameAsArray;
 	}
 	
+	/**
+	 * Creates and returns an array containing subjects
+	 *
+	 * This method uses a DOMXPath query to find all sameAs tags in a subject and return them as an array
+	 *
+	 * @param DOMNode $subjectTag XPath query from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return array containing all subjects
+	 * @author Petter Lundberg Olsen
+	 */ 	
 	private static function getSubjectBroader($subjectTag, $xpath) {
 		$broaderArray = array( );
 		
