@@ -68,12 +68,17 @@
 		$post = $value['post'];
 		$meta = $value['meta'];
 		$subjects = $value['subjects'];
-
+		$authors = $value['users'];
 			
 		if($post != null && $meta != null){
-			$wp_error = insertPost($post, $meta, $subjects);
+			$wp_error = insertPost($post, $meta, $subjects, $authors);
 			debug("<h3>Returned from Wordpress: </h3>");
-			debug($wp_error);
+			debug(var_dump($wp_error));
+			
+			// Wordpress returns post_id if successful, so a number can be used to confirm a successful post creation.
+			if( is_numeric($wp_error) ) {
+				setAuthors($authors, $wp_error);
+			}
 			
 		}
 	}
@@ -105,11 +110,6 @@
 	
 	
 	
-	// Returns new or existing author ID
-	function insertAuthor(){
-		return null;
-	}
-	
 	// Returns Wordpress Post by NML2-GUID
 	function getPostByGUID($guid){
 		
@@ -135,7 +135,7 @@
 	
 
 	// Inserts the post into the WordPress Database
-	function insertPost($post, $meta, $subjects){
+	function insertPost($post, $meta, $subjects, $authors){
 		
 		debug("<h2>Insert Post: </h2>");
 		
@@ -145,6 +145,8 @@
 			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']);
 			$post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
 		}
+		
+		$post['post_author'] = getCreator($authors);
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 		if(	$existing_post != null){
 			debug("<strong>Found post with ID: </strong> $post_id -> Just update existing");
@@ -328,36 +330,62 @@
 	}
 	
 	
+	// Returns first element of array or null.
+	function getCreator($authors){
+		debug("<strong>Get creator</strong>");
+		foreach($authors as $nameKey=>$nameVal){
+			$creator = createOrGetAuthor($nameVal);
+			debug("Creator:" . var_dump($creator));
+			return $creator;
+		}
+	}
 	
-	
-	function setAuthors(){
+	function setAuthors($authors, $post_id){
+		debug("<strong>Set authors</strong>");
+		debug(var_dump($authors));          
+
+		$author_meta = "";
+		
 		
 		// Create or get author ID
-		// Save nml2_meta with list of strings for post. 
+		foreach($authors as $nameKey=>$nameVal){
+			$id = createOrGetAuthor($nameVal);
+			if(is_numeric($id)){
+				$author_meta = $author_meta . "$id,";
+			}	
+			
+		}
 		
+		$result = update_post_meta($post_id, "nml2_multiple_authors", $author_meta);
+		debug("Result " . var_dump($result));
 		
 	}
 	
 	
 	function createOrGetAuthor($auth){
-		if($auth == null){
+		
+		
+		// Return if null or author has no name
+		if($auth == null || $auth['user_login'] == null){
 			return;
 		}
-		$auth_id = get_cat_ID( $auth);
 		
-		if($auth_id != 0){
-			debug("Found category! " . $auth_id);
-			return $auth_id;
+		$author = get_user_by( 'login', $auth['user_login'] );
+		
+		
+		if($author->ID != null){
+			debug("Found author! " . var_dump($author));
+			return $author->ID;
 		}
 		// CREATE CATEGORY AND RETURN ID; wp_insert_category
-		$email = "";
+		$email = ($auth['user_email'] == null ? "" : $auth['user_email']);
 		$password = "";
 		
-		$result = wp_create_user ( $email, $password, $email );
+		$result = wp_create_user ( $auth['user_login'], $password, $email );
 	  
 		debug("Result from creation of category: " . var_dump($result));
 		debug("Create or get Author" . get_cat_ID( $auth));
-		return get_cat_id($auth);
+		return $result;
 	}
 	
 	

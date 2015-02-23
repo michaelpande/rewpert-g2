@@ -56,11 +56,72 @@
 	if(function_exists('nml2_get_all_authors'))
    				nml2_get_all_authors();
 			else
-    				the_author_posts_link();
+				the_author_posts_link();
 	
 	*/
 	function nml2_get_all_authors(){
-		echo "Author 1, Author 2, Author 3";
+		$id = get_the_ID();
+		
+		$multi_authors = get_post_meta($id, 'nml2_multiple_authors');
+		
+		if($multi_authors != null){
+			$multi_authors = explode(",", $multi_authors[0]);
+			$multi_authors = array_unique($multi_authors);
+			$count = 0;
+			$author_string = "";
+			foreach($multi_authors as $nameKey=>$nameVal){
+				
+				$user = get_user_by('id',$nameVal);
+				if($user){
+					if($count > 0){
+						$author_string .= ", ";
+					}
+					$count++;
+					$url = esc_url( get_author_posts_url( $user->ID ));
+					$author_string .= '<a href="'.$url.'">'.$user->user_login.'</a>';
+					
+				}
+				
+			}
+			
+			if($author_string != ""){
+				return $author_string;
+			}
+		}
+		
+		return get_the_author();
+		
+	}
+	
+	
+	function nml2_get_author_posts(){
+		
+		
+		ob_start();
+		the_author_meta('ID');
+		$ID = ob_get_contents();
+		ob_end_clean();
+		
+		
+		$meta_query_args = array(
+			'relation' => 'OR',
+			
+			
+			'meta_query' => array(
+				  array(
+						'key'     => 'nml2_multiple_authors',
+						'value'   => $ID,
+						'compare' => 'LIKE'
+					)
+			)
+		);
+		
+		
+		$wpquery = new WP_Query($meta_query_args);
+	
+		return $wpquery;
+		
+		
 	}
 	
 	
