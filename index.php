@@ -102,24 +102,69 @@
 		$ID = ob_get_contents();
 		ob_end_clean();
 		
+		$author = get_posts(array(
 		
-		$meta_query_args = array(
+		'post_status' => 'publish',
+		'post_type' => 'post',
+		'relation' => 'OR',
+		'author' => $ID
+		
+	
+		));
+		$meta_author = get_posts(array(
+			
+			'post_status' => 'publish',
+			'post_type' => 'post',
 			'relation' => 'OR',
 			
-			
 			'meta_query' => array(
-				  array(
-						'key'     => 'nml2_multiple_authors',
-						'value'   => $ID,
-						'compare' => 'LIKE'
-					)
-			)
-		);
+									'relation' => 'OR',
+									array(
+										'key'     => 'nml2_multiple_authors',
+										'value'   => $ID,
+										'compare' => 'LIKE'
+									)
+								
+								)
+			
+			
+		
+			));
+
+			
+		$mergedposts = array_merge($meta_author, $author);
+		
+
+		$postids = array();
+		foreach( $mergedposts as $item ) {
+			$postids[]=$item->ID;
+		}
+		
+		$uniqueposts = array_unique($postids);
 		
 		
-		$wpquery = new WP_Query($meta_query_args);
-	
-		return $wpquery;
+		$posts = get_posts(array(
+				'post__in' => $uniqueposts,
+				));
+				
+		
+		return $posts;	
+		/* 
+		$meta_query_args = array(
+			'relation' => 'OR',
+								
+			'meta_query' => array(
+								
+								  array(
+										'key'     => 'nml2_multiple_authors',
+										'value'   => $ID,
+										'compare' => 'LIKE'
+									)
+				)
+			);
+			*/
+		
+		
 		
 		
 	}
