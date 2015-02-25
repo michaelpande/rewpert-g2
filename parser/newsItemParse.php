@@ -98,13 +98,14 @@ class NewsItemParse {
 								    );
 					'photo' => $photos = array(
 								0 => $photo = array(
-										'href' => string
-										'size' => string
-										'width' => string
-										'height' => string
-										'contenttype' => string
-										'colourspace' => string
-										'rendition' => string
+										'href' 			=> string
+										'size' 			=> string
+										'width' 		=> string
+										'height' 	  	=> string
+										'contenttype' 	=> string
+										'colourspace' 	=> string
+										'rendition' 	=> string
+										'description' 	=> string
 									 );
 								1 => same as index above. Number of indexes depends on number of photos
 								);
@@ -114,8 +115,10 @@ class NewsItemParse {
 		);
 	*/		
 	
-	static $ns = "";
-
+	//A variable holding the namespace of the xml file
+	//Automatic set to empty string and changed if xml has a namespace in its outermost tag
+	private static $ns = "";
+	
 	/**
 	 * Creates and returns the array structure that are sent to the RESTApi
      *
@@ -130,7 +133,7 @@ class NewsItemParse {
 		global $ns;
 		$doc = new DOMDocument();
 		
-		//Checks if $file is raw XML or a XML file and uses the corect load operation
+		//Checks if $file is raw XML or a XML file and uses the correct load operation
 		if(is_file($file)) {
 			$doc->load($file);
 		}
@@ -138,7 +141,8 @@ class NewsItemParse {
 			$doc->loadXML($file);
 		}
 		
-		$uri = $doc	->documentElement->lookupnamespaceURI(NULL);
+		//Finds the namespace of the outermost tag in the xml file
+		$uri = $doc->documentElement->lookupnamespaceURI(NULL);
 
 		
         $xpath = new DOMXPath($doc);
@@ -146,11 +150,12 @@ class NewsItemParse {
 		//XML namescpaces
         $xpath->registerNamespace('html', "http://www.w3.org/1999/xhtml");
 		$xpath->registerNamespace('nitf', "http://iptc.org/std/NITF/2006-10-18/");
+		
+		//Test to see if $uri if not equal to ""
 		if(strcmp("",$uri) != 0) {
 			$xpath->registerNamespace("docNamespace", $uri);
 			$ns = "docNamespace:";
 		}
-		echo("ns: ".$ns);
 		
 		/*Query to separate the different newsItems in a newsMessage
 		  This query will find the absolute path (without XML namespaces): newsMessage/itemSet/newsItem
@@ -352,7 +357,8 @@ class NewsItemParse {
 				'height' 	  => NewsItemParse::getPhotoHeight($node, $xpath), //string, the height of the image
 				'contenttype' => NewsItemParse::getPhotoContenttype($node, $xpath), //string, what type of file the image is
 				'colourspace' => NewsItemParse::getPhotoColourspace($node, $xpath), //string, what colorspace the image is
-				'rendition'   => NewsItemParse::getPhotoRendition($node, $xpath) //string, tells if the image is higres, meant for web, or is a thumbnail
+				'rendition'   => NewsItemParse::getPhotoRendition($node, $xpath), //string, tells if the image is higres, meant for web, or is a thumbnail
+				'description' => NewsItemParse::getPhotoDescription($newsItem, $xpath)
 			);
 			
 			array_push($photos, $photo);
@@ -1362,6 +1368,35 @@ class NewsItemParse {
 	}
 	
 	/**
+	 * Fin and returns the description of an image
+	 *
+	 * This method uses a DOMXPath query to find and return the description of and image
+	 *
+	 * @param DOMNode $newsItem XPath query result from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string The description of the image, null if no description present
+	 * @author Petter Lundberg Olsen
+	 */
+	private static function getPhotoDescription($newsItem, $xpath) {
+		global $ns;	
+		$description = null;
+		
+		/*This XPath query is a subquery from the query in the method createPhotoArray
+		  Path without XML namespace: contentMeta/description
+		*/
+		$nodelist = $xpath->query($ns."contentMeta/".$ns."description", $newsItem);
+		
+		/*Sets the results of the query above on the return variable if any.
+		  The length of the $nodelist should only be 1 if the newsML is created correctly.
+		*/ 
+		foreach($nodelist as $node) {
+			$description = $node->nodeValue;
+		}
+		
+		return $description;
+	}
+	
+	/**
 	 * Checks if some of the parts of the data being sent to Wordpress is missing and setting status code accordingly
 	 *
 	 * Checks first if 'status_code' in $returnArray is set to something diferent then 200 and returns that number if it dose.
@@ -1382,7 +1417,6 @@ class NewsItemParse {
 		if($newsItemArray['post']['post_content'] === null) {
 			
 			if(count($newsItemArray['photo']) == 0) {
-				echo("test");
 				return 400;
 			}
 		}
@@ -1390,20 +1424,17 @@ class NewsItemParse {
 		//Checking if the headline is missing
 		if($newsItemArray['post']['post_title'] === null) {
 			if(count($newsItemArray['photo']) == 0) {
-				echo("test1");
 				return 400;
 			}
 		}
 		
 		//Checking if the guid is missing
 		if($newsItemArray['meta']['nml2_guid'] === null) {
-			echo("test2");
 			return 400;
 		}
 		
 		//Checking if the version number is missing
 		if($newsItemArray['meta']['nml2_version'] === null) {
-			echo("test3");
 			return 400;
 		}
 
