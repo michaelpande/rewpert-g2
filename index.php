@@ -226,12 +226,7 @@
     function getPathToPluginDir(){
         define( 'PLUGIN_DIR', dirname(__FILE__).'/' );
 
-		
-        // Necessary to get the actual URL to plugins in wordpress, instead of wp-admin.
-        $current_directory = explode('\\', PLUGIN_DIR);
-        $dir = $current_directory[count($current_directory)-1]; // Name of pluginfolder
-
-		$str = WP_PLUGIN_URL .'/'. $dir;
+		$str = WP_PLUGIN_URL .'/'. basename(__DIR__) .'/';
 		
 		
 		$str = str_replace(' ', '%20', $str);
