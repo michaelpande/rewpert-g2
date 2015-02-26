@@ -1414,34 +1414,22 @@ class NewsItemParse {
 	private static function setStatusCode($returnArray, $newsItemArray) {
 		if($returnArray['status_code'] != 200) {
 			return $returnArray['status_code'];
-		}
-		
-		//Checking if the content is missing
-		if($newsItemArray['post']['post_content'] === null) {
-			
+		} else if($newsItemArray['post']['post_content'] === null) { //Checking if the content is missing
 			if(count($newsItemArray['photo']) == 0) {
 				return 400;
 			}
-		}
-		
-		//Checking if the headline is missing
-		if($newsItemArray['post']['post_title'] === null) {
+		} elseif($newsItemArray['post']['post_title'] === null) { //Checking if the headline is missing
 			if(count($newsItemArray['photo']) == 0) {
 				return 400;
 			}
+		} elseif($newsItemArray['meta']['nml2_guid'] === null) {  //Checking if the guid is missing
+			return 400;
+		} elseif($newsItemArray['meta']['nml2_version'] === null) { //Checking if the version number is missing
+			return 400;
+		} else {
+			return 200;
 		}
 		
-		//Checking if the guid is missing
-		if($newsItemArray['meta']['nml2_guid'] === null) {
-			return 400;
-		}
-		
-		//Checking if the version number is missing
-		if($newsItemArray['meta']['nml2_version'] === null) {
-			return 400;
-		}
-
-		return 200;
 	} 
 
 	/**
@@ -1467,7 +1455,7 @@ class NewsItemParse {
 	 *
 	 * This method uses a DOMXPath query to find the publication status on the NewsML-G2 document returns a valid Wordpress
 	 * status depending on the pubStatus. It sends 'publish' if the status is usable, 'trash' if the status is canceled and
-	 * 'pending' in all other cases.
+	 * 'pending' in all other cases.	
 	 *
 	 * @param DOMNode $newsItem XPath query result from an earlier part of the document that the new query shall be preformed on
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
@@ -1482,8 +1470,7 @@ class NewsItemParse {
 		foreach($nodelist as $node) {
 			if(strcmp($node->nodeValue, "stat:usable") == 0) {
 				return 'publish';
-			} 
-			if (strcmp($node->nodeValue, "stat:canceled") == 0) {
+			} elseif (strcmp($node->nodeValue, "stat:canceled") == 0) {
 				return 'trash';
 			}
 		}
