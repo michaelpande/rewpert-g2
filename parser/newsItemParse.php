@@ -179,8 +179,10 @@ class NewsItemParse {
 			//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
 			$returnArray['status_code'] = NewsItemParse::setStatusCode($returnArray, $newsItemArray);
 			
-			//Checking if an embargo date is present and changes 'post_status' accordingly
-			$newsItemArray['post']['post_status'] = NewsItemParse::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
+			if(strcmp($newsItemArray['post']['post_status'], 'publish') == 0) {
+				//Checking if an embargo date is present and changes 'post_status' accordingly
+				$newsItemArray['post']['post_status'] = NewsItemParse::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
+			}
 			
 			//Adds the information found in the newsItem to the array that will be sent to the RESTApi
 			array_push($returnArray, $newsItemArray);
@@ -206,7 +208,7 @@ class NewsItemParse {
             'post_content'   => NewsItemParse::getPostContent($newsItem, $xpath), // The full text of the post.
             'post_name'      => NewsItemParse::getPostName($newsItem, $xpath), // The name (slug) for your post
             'post_title'     => NewsItemParse::getPostHeadline($newsItem, $xpath), // The title of your post.
-            'post_status'  	 => 'publish', //[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
+            'post_status'  	 => self::setPostStatus($newsItem, $xpath), //[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
             'tags_input'     => NewsItemParse::getPostTags($newsItem, $xpath) // Default empty.
         );
 		
@@ -384,13 +386,14 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentSet/inlineXML/html/body/article/div it will only choose the div whit a itemprop attribute = articleBody
 		*/
-		$nodelist = $xpath->query(NewsItemParse::$ns."contentSet/".$ns."inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem);
-
+		$nodelist = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem);
+		
 		if($nodelist->length == 0) {
 			/*Trying this query if the above query  gives no result.
 			Query path that continues from first query at the start of the document.
 			Path without XML namespace: contentSet/inlineXML/html/body
 			*/  
+
 			$nodelist = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:body", $newsItem);
 
 			if($nodelist->length == 0) {
@@ -449,7 +452,7 @@ class NewsItemParse {
 			  Query path that continues from first query at the start of the document.
 			  Path without XML namespace: contentSet/inlineXML/html/head/title
 			*/  
-			$nodelist = $xpath->query($ns."contentSet/newsMessage:inlineXML/html:html/html:head/html:title", $newsItem);
+			$nodelist = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:head/html:title", $newsItem);
 			
 			if($nodelist->length == 0) {
 				
@@ -457,7 +460,7 @@ class NewsItemParse {
 				  Query path that continues from first query at the start of the document.
 				  Path without XML namespace: contentSet/inlineXML/html/head/title
 				*/  
-				$nodelist = $xpath->query($ns."contentSet/newsMessage:inlineXML/nitf:nitf/nitf:body.head/nitf:hedline", $newsItem);
+				$nodelist = $xpath->query($ns."contentSet/".$ns."inlineXML/nitf:nitf//nitf:body/nitf:body.head/nitf:hedline", $newsItem);
 			}
 		}
 		
@@ -1451,12 +1454,42 @@ class NewsItemParse {
 	 * @return string 'publish' or 'future'
 	 * @author Petter Lundberg Olsen
 	 */
-	public static function setEbargoState($embargo) {
+	private static function setEbargoState($embargo) {
 		if($embargo === null) {
 			return 'publish';
 		}
 		return 'future';
 		
+	}
+	
+	/**
+	 * Find and sets the publication status of the post
+	 *
+	 * This method uses a DOMXPath query to find the publication status on the NewsML-G2 document returns a valid Wordpress
+	 * status depending on the pubStatus. It sends 'publish' if the status is usable, 'trash' if the status is canceled and
+	 * 'pending' in all other cases.
+	 *
+	 * @param DOMNode $newsItem XPath query result from an earlier part of the document that the new query shall be preformed on
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string 'publish', 'trash' or 'pending'
+	 * @author Petter Lundberg Olsen
+	 */
+	 */
+	private static function setPostStatus($newsItem, $xpath) {
+		global $ns;
+		
+		$nodelist = $xpath->query($ns."itemMeta/".$ns."pubStatus/@qcode", $newsItem);
+		
+		foreach($nodelist as $node) {
+			if(strcmp($node->nodeValue, "stat:usable") == 0) {
+				return 'publish';
+			} 
+			if (strcmp($node->nodeValue, "stat:canceled") == 0) {
+				return 'trash';
+			}
+		}
+		
+		return 'pending';
 	}
 	
 }
