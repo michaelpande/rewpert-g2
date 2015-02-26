@@ -169,19 +169,19 @@ class NewsItemParse {
 		//Files the given array for each newsItem
 		foreach($newsItemList as $newsItem) {
 			$newsItemArray = array(
-				'post'  	=> NewsItemParse::createPostArray($newsItem, $xpath), //array
-				'meta'  	=> NewsItemParse::createMetaArray($newsItem, $xpath), //array
-				'users' 	=> NewsItemParse::createUserArray($newsItem, $xpath), //array
-				'subjects' 	=> NewsItemParse::createSubjectArray($newsItem, $xpath), //array
-				'photo' 	=> NewsItemParse::createPhotoArray($newsItem, $xpath) //array
+				'post'  	=> self::createPostArray($newsItem, $xpath), //array
+				'meta'  	=> self::createMetaArray($newsItem, $xpath), //array
+				'users' 	=> self::createUserArray($newsItem, $xpath), //array
+				'subjects' 	=> self::createSubjectArray($newsItem, $xpath), //array
+				'photo' 	=> self::createPhotoArray($newsItem, $xpath) //array
 			);
 			
 			//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
-			$returnArray['status_code'] = NewsItemParse::setStatusCode($returnArray, $newsItemArray);
+			$returnArray['status_code'] = self::setStatusCode($returnArray, $newsItemArray);
 			
 			if(strcmp($newsItemArray['post']['post_status'], 'publish') == 0) {
 				//Checking if an embargo date is present and changes 'post_status' accordingly
-				$newsItemArray['post']['post_status'] = NewsItemParse::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
+				$newsItemArray['post']['post_status'] = self::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
 			}
 			
 			//Adds the information found in the newsItem to the array that will be sent to the RESTApi
@@ -205,11 +205,11 @@ class NewsItemParse {
 	 */
 	private static function createPostArray($newsItem, $xpath) {
         $post = array(
-            'post_content'   => NewsItemParse::getPostContent($newsItem, $xpath), // The full text of the post.
-            'post_name'      => NewsItemParse::getPostName($newsItem, $xpath), // The name (slug) for your post
-            'post_title'     => NewsItemParse::getPostHeadline($newsItem, $xpath), // The title of your post.
+            'post_content'   => self::getPostContent($newsItem, $xpath), // The full text of the post.
+            'post_name'      => self::getPostName($newsItem, $xpath), // The name (slug) for your post
+            'post_title'     => self::getPostHeadline($newsItem, $xpath), // The title of your post.
             'post_status'  	 => self::setPostStatus($newsItem, $xpath), //[ 'draft' | 'publish' | 'pending'| 'future' | 'private' | custom registered status ] // Default 'draft'.
-            'tags_input'     => NewsItemParse::getPostTags($newsItem, $xpath) // Default empty.
+            'tags_input'     => self::getPostTags($newsItem, $xpath) // Default empty.
         );
 		
 		return $post;
@@ -227,15 +227,15 @@ class NewsItemParse {
 	 */
 	private static function createMetaArray($newsItem, $xpath) {
 		$meta = array(
-			'nml2_guid' 		  	=> NewsItemParse::getMetaGuid($newsItem, $xpath), //string, the guide of the newsItem
-			'nml2_version' 		  	=> NewsItemParse::getMetaVersion($newsItem, $xpath), //string, the version of the newsItem
-			'nml2_firstCreated'   	=> NewsItemParse::getMetaFirstCreated($newsItem, $xpath), //string, the timesap when the newsItem was first created
-			'nml2_versionCreated' 	=> NewsItemParse::getMetaVersionCreated($newsItem, $xpath), //string, the timestamp when the current version of the newsItem was created
-			'nml2_embarogDate' 	  	=> NewsItemParse::getMetaEmbargo($newsItem, $xpath), //string, timestamp of the embargo
-			'nml2_newsMessageSendt' => NewsItemParse::getMetaSentDate($xpath), //string, timestamp from when the newsMessage where sent
-			'nml2_language'			=> NewsItemParse::getMetaLanguage($newsItem, $xpath), //string, the language of the content in the newsItem
-			'nml2_copyrightHolder' 	=> NewsItemParse::getMetaCopyrightHolder($newsItem, $xpath),
-			'nml2_copyrightNotice' 	=> NewsItemParse::getMetaCopyrightNotice($newsItem, $xpath),
+			'nml2_guid' 		  	=> self::getMetaGuid($newsItem, $xpath), //string, the guide of the newsItem
+			'nml2_version' 		  	=> self::getMetaVersion($newsItem, $xpath), //string, the version of the newsItem
+			'nml2_firstCreated'   	=> self::getMetaFirstCreated($newsItem, $xpath), //string, the timesap when the newsItem was first created
+			'nml2_versionCreated' 	=> self::getMetaVersionCreated($newsItem, $xpath), //string, the timestamp when the current version of the newsItem was created
+			'nml2_embarogDate' 	  	=> self::getMetaEmbargo($newsItem, $xpath), //string, timestamp of the embargo
+			'nml2_newsMessageSendt' => self::getMetaSentDate($xpath), //string, timestamp from when the newsMessage where sent
+			'nml2_language'			=> self::getMetaLanguage($newsItem, $xpath), //string, the language of the content in the newsItem
+			'nml2_copyrightHolder' 	=> self::getMetaCopyrightHolder($newsItem, $xpath),
+			'nml2_copyrightNotice' 	=> self::getMetaCopyrightNotice($newsItem, $xpath),
 		);
 		
 		return $meta;
@@ -264,11 +264,11 @@ class NewsItemParse {
 		//Creates the creator of the news article
 		foreach($nodelist as $node) {
 			$user = array(
-				'user_login' 	=> NewsItemParse::getUserName($node, $xpath), //string login_name of the user
-				'description'	=> NewsItemParse::getUserDescription($node, $xpath), //string, describing the role of the user
-				'user_email'	=> NewsItemParse::getUserEmail($node, $xpath),
-				'nml2_qcode'	=> NewsItemParse::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
-				'nml2_uri'		=> NewsItemParse::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
+				'user_login' 	=> self::getUserName($node, $xpath), //string login_name of the user
+				'description'	=> self::getUserDescription($node, $xpath), //string, describing the role of the user
+				'user_email'	=> self::getUserEmail($node, $xpath),
+				'nml2_qcode'	=> self::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
+				'nml2_uri'		=> self::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
 			
 			array_push($users, $user);
@@ -282,11 +282,11 @@ class NewsItemParse {
 		//Create the contributors of the news article
 		foreach($nodelist as $node) {
 			$user = array(
-				'user_login' 	=> NewsItemParse::getUserName($node, $xpath), //string login_name of the user
-				'description'	=> NewsItemParse::getUserDescription($node, $xpath), //string, describing the role of the user
-				'user_email'	=> NewsItemParse::getUserEmail($node, $xpath),
-				'nml2_qude'		=> NewsItemParse::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
-				'nml2_uri'		=> NewsItemParse::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
+				'user_login' 	=> self::getUserName($node, $xpath), //string login_name of the user
+				'description'	=> self::getUserDescription($node, $xpath), //string, describing the role of the user
+				'user_email'	=> self::getUserEmail($node, $xpath),
+				'nml2_qude'		=> self::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
+				'nml2_uri'		=> self::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
 			
 			array_push($users, $user);
@@ -317,12 +317,12 @@ class NewsItemParse {
 		//This loop creates an array cantoning information about each subject
 		foreach($nodelist as $node) {
 			$subject = array(
-				'qcode'   => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
-				'name' 	  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containing name and its attributes
-				'type' 	  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
-				'uri' 	  => NewsItemParse::getSubjectUri($node, $xpath), //string, subject uri
-				'sameAs'  => NewsItemParse::getSubjectSameAs($node, $xpath), //array, an array containing all subjects sameAs tags
-				'broader' => NewsItemParse::getSubjectBroader($node, $xpath) //array, an array containing all subjects broader tags
+				'qcode'   => self::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name' 	  => self::getSubjectName($node, $xpath), //array, an array containing name and its attributes
+				'type' 	  => self::getSubjectType($node, $xpath), //string, the type of subject
+				'uri' 	  => self::getSubjectUri($node, $xpath), //string, subject uri
+				'sameAs'  => self::getSubjectSameAs($node, $xpath), //array, an array containing all subjects sameAs tags
+				'broader' => self::getSubjectBroader($node, $xpath) //array, an array containing all subjects broader tags
 			);
 			
 			array_push($subjects, $subject);
@@ -353,14 +353,14 @@ class NewsItemParse {
 		//This loop creates an array containing information about each photo
 		foreach($nodelist as $node) {
 			$photo = array( 
-				'href' 		  => NewsItemParse::getPhotoHref($node, $xpath), //string, the source of the image
-				'size' 		  => NewsItemParse::getPhotoSize($node, $xpath), //string, the size of the image in bytes 
-				'width' 	  => NewsItemParse::getPhotoWidth($node, $xpath), //string, the width of the picture in px
-				'height' 	  => NewsItemParse::getPhotoHeight($node, $xpath), //string, the height of the image
-				'contenttype' => NewsItemParse::getPhotoContenttype($node, $xpath), //string, what type of file the image is
-				'colourspace' => NewsItemParse::getPhotoColourspace($node, $xpath), //string, what colorspace the image is
-				'rendition'   => NewsItemParse::getPhotoRendition($node, $xpath), //string, tells if the image is higres, meant for web, or is a thumbnail
-				'description' => NewsItemParse::getPhotoDescription($newsItem, $xpath)
+				'href' 		  => self::getPhotoHref($node, $xpath), //string, the source of the image
+				'size' 		  => self::getPhotoSize($node, $xpath), //string, the size of the image in bytes 
+				'width' 	  => self::getPhotoWidth($node, $xpath), //string, the width of the picture in px
+				'height' 	  => self::getPhotoHeight($node, $xpath), //string, the height of the image
+				'contenttype' => self::getPhotoContenttype($node, $xpath), //string, what type of file the image is
+				'colourspace' => self::getPhotoColourspace($node, $xpath), //string, what colorspace the image is
+				'rendition'   => self::getPhotoRendition($node, $xpath), //string, tells if the image is higres, meant for web, or is a thumbnail
+				'description' => self::getPhotoDescription($newsItem, $xpath)
 			);
 			
 			array_push($photos, $photo);
@@ -957,10 +957,10 @@ class NewsItemParse {
 		//This loop creates an array containing information about each subject
 		foreach($nodelist as $node) {
 			$sameAs = array(
-				'qcode' => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
-				'name'  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containing name and its attributes
-				'type'  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
-				'uri'   => NewsItemParse::getSubjectUri($node, $xpath) //string, subject uri
+				'qcode' => self::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name'  => self::getSubjectName($node, $xpath), //array, an array containing name and its attributes
+				'type'  => self::getSubjectType($node, $xpath), //string, the type of subject
+				'uri'   => self::getSubjectUri($node, $xpath) //string, subject uri
 			);
 			 
 			array_push($sameAsArray, $sameAs);
@@ -987,10 +987,10 @@ class NewsItemParse {
 
 		foreach($nodelist as $node) {
 			$broader = array(
-				'qcode' => NewsItemParse::getSubjectQcode($node, $xpath), //string, the qcode of the subject
-				'name'  => NewsItemParse::getSubjectName($node, $xpath), //array, an array containig name and its attributes
-				'type'  => NewsItemParse::getSubjectType($node, $xpath), //string, the type of subject
-				'uri'   => NewsItemParse::getSubjectUri($node, $xpath) //string, subject uri
+				'qcode' => self::getSubjectQcode($node, $xpath), //string, the qcode of the subject
+				'name'  => self::getSubjectName($node, $xpath), //array, an array containig name and its attributes
+				'type'  => self::getSubjectType($node, $xpath), //string, the type of subject
+				'uri'   => self::getSubjectUri($node, $xpath) //string, subject uri
 			);
 			
 			array_push($broaderArray, $broader);
@@ -1052,8 +1052,8 @@ class NewsItemParse {
 		foreach($nodelist as $node) {
 			$name = array(
 				'text' => $node->nodeValue,
-				'lang' => NewsItemParse::getSubjectLang($node, $xpath),
-				'role' => NewsItemParse::getSubjectRole($node, $xpath)
+				'lang' => self::getSubjectLang($node, $xpath),
+				'role' => self::getSubjectRole($node, $xpath)
 			);
 			
 			array_push($nameArray, $name);
@@ -1473,7 +1473,6 @@ class NewsItemParse {
 	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
 	 * @return string 'publish', 'trash' or 'pending'
 	 * @author Petter Lundberg Olsen
-	 */
 	 */
 	private static function setPostStatus($newsItem, $xpath) {
 		global $ns;
