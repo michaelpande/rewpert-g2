@@ -1,20 +1,20 @@
 <?php
 
-	// Simple Cache Storage
-	// 		A simple database storage, for storing parameters quickly and easy.
-	// 		By using the prepare(true) statement and executing afterwards, 
-	//		you should make sure you only do one group of queries at the time. As the stacked queries are executed this order Insert, Update, Delete.
-	// 		
-	// 
+
+
+	//Testing method for development & debugging.
+	//SimpleStorageTest::test(); 
 	
 	
-	// MORE TESTING
-	// LINUX SAFE URL?
-	
-	
-	
-	//SimpleStorageTest::test();
-	
+	/**
+	* Simple Cache Storage (SQLite based)
+	* 	A simple database storage, for storing parameters quickly and easy.
+	* 	By using the prepare(true) statement and executing afterwards, 
+	*	you should make sure you only do one group of queries at the time. As the stacked queries are executed this order Insert, Update, Delete.
+	* 
+	* SQLite functionality is enabled by default in PHP 5.0 and up. 
+	* @author Michael Pande
+	*/
 	class SimpleStorage{
 		
 		private $db;
@@ -41,7 +41,11 @@
 		
 		
 
-	 
+		 /**
+		 * Returns the path to the database 
+		 *
+		 * @author Michael Pande
+		 */
 		private function db_location(){
 			global $database_name;
 			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
@@ -54,8 +58,13 @@
 			
 		}
 		
-		
-		// Method to decide if all insert / update statements should be combined into a few large. Call on Execute after entire statement is prepared.
+		 /**
+		 * Method to decide if all insert / update statements should be combined into a few large. Call on Execute after entire statement is prepared.
+		 *
+		 * @param boolean $bool - true / false
+		 *
+		 * @author Michael Pande
+		 */
 		public function prepare($bool){
 			global $prepare, $preparedInsert, $preparedUpdate, $preparedRemove, $insertCount, $updateCount, $removeCount;
 			if(is_bool($bool)){
@@ -71,8 +80,15 @@
 			}
 		}
 		
-		// Method to combine multiple insert queries into one. SQLite has a limitation on number of values to insert in one query, so this method will
-		// split the queries to a few every 200 value. 
+		
+		/**
+		 * Method to combine multiple insert queries into one. SQLite has a limitation on number of values to insert in one query, so this method will
+		 * split the queries to a few every 200 value.
+		 *
+		 * @param string to add to the prepared insert query.
+		 *
+		 * @author Michael Pande
+		 */
 		private function prepareInsert($str){
 			global $preparedInsert, $insertCount;
 			
@@ -92,8 +108,14 @@
 		}
 		
 		
-		// Method to combine multiple update queries into one. SQLite has a limitation on number of values to update in one query, so this method will
-		// split the queries to a few every 200 value. 
+		/**
+		 * Method to combine multiple update queries into one. SQLite has a limitation on number of values to update in one query, so this method will
+		 * split the queries to a few every 200 value.
+		 *
+		 * @param string to add to the prepared update query.
+		 *
+		 * @author Michael Pande
+		 */
 		private function prepareUpdate($str){
 			global $preparedUpdate, $updateCount;
 			
@@ -113,8 +135,14 @@
 			
 		}
 		
-		// Method to combine multiple delete queries into one. SQLite has a limitation on number of values to delete in one query, so this method will
-		// split the queries to a few every 200 value. 
+		/**
+		 * Method to combine multiple delete queries into one. SQLite has a limitation on number of values to delete in one query, so this method will
+		 * split the queries to a few every 200 value.
+		 *
+		 * @param string to add to the prepared delete query.
+		 *
+		 * @author Michael Pande
+		 */
 		private function prepareDelete($str){
 			global $preparedDelete, $DeleteCount;
 			
@@ -136,7 +164,11 @@
 		
 		
 		
-		// Call on this to execute the prepared statement
+		/**
+		 * Method to call after the prepared queries has been made.
+		 *
+		 * @author Michael Pande
+		 */
 		public function execute(){
 			global $prepare, $preparedInsert, $preparedDelete, $preparedUpdate;
 			if($prepare != null && ($preparedInsert != null || $preparedUpdate != null ||  $preparedDelete != null)){
@@ -176,7 +208,11 @@
 		}
 		
 		
-		// Create Database
+		/**
+		 * Creates the database and required tables at the location set (or default) in the creation of the SimpleStorage object (object of this class).
+		 *
+		 * @author Michael Pande
+		 */
 		private function createDB(){
 			global $db;
 			if(isset($db) && $db != null){	
@@ -197,9 +233,15 @@
 		
 		
 		
-		
-		
-		// Get value matching id, returns string or null
+		/**
+		 * Get first matching value from database based on the key(s)
+		 * 
+		 * @param $key1 - First key (Can be empty)
+		 * @param $key2 - Second key (Can be empty)
+		 * @return string or null
+		 *
+		 * @author Michael Pande
+		 */
 		public function get($key1, $key2){
 
 			try{
@@ -224,7 +266,16 @@
 		
 		
 		
-		// Update or set value with matching id, returns true/false
+		/**
+		 * Update (or set if it does not exist) value from database based on the key(s) and the new value
+		 * 
+		 * @param $key1 - First key (Can be empty)
+		 * @param $key2 - Second key (Can be empty)
+		 * @param $value - The new string value (Supports serialization)
+		 * @return true/false - If it was successful or not
+		 *
+		 * @author Michael Pande
+		 */
 		public function update($key1, $key2, $value){
 			global $prepare;
 			if($this->get($key1,$key2) == null){
@@ -254,7 +305,16 @@
 		}
 		
 
-		// Stores value if id don't exist already. Returns true if value was stored, false if not. 
+		/**
+		 * Stores value if id don't exist already
+		 * 
+		 * @param $key1 - First key (Can be empty)
+		 * @param $key2 - Second key (Can be empty)
+		 * @param $value - The string value (Supports serialization)
+		 * @return true if value was stored, false if not. 
+		 *
+		 * @author Michael Pande
+		 */
 		public function set($key1, $key2, $value){
 			global $prepare;
 			try{
@@ -278,6 +338,15 @@
 		}
 		
 		
+		/**
+		 * Removes entry matching the key values
+		 * 
+		 * @param $key1 - First key (Can be empty)
+		 * @param $key2 - Second key (Can be empty)
+		 * @return true if value was deleted, false if not. 
+		 *
+		 * @author Michael Pande
+		 */
 		public function remove($key1, $key2){
 			global $prepare;
 			
@@ -302,10 +371,14 @@
 			return false;
 		}
 		
-		
-		
-		
-		
+		/**
+		 * Returns input safe for database queries.
+		 * 
+		 * @param $str - The string to be used in query 
+		 * @return $str - Database safe string
+		 *
+		 * @author Michael Pande
+		 */
 		private function input($str){
 			$str = str_replace("'","''",$str); // Replace the one occurence when the test fails due to ', SQLite supports '' for the character '.
 			$str = htmlspecialchars($str);
@@ -313,12 +386,25 @@
 			
 		}
 		
-		
+		/**
+		 * Returns output from database to restore after using htmlspecialchars.
+		 * 
+		 * @param $str - The string returned from the database
+		 * @return $str - Restored string
+		 *
+		 * @author Michael Pande
+		 */
 		private function output($str){
 			return htmlspecialchars_decode($str);
 		}
 		
-		// Returns number of rows
+		/**
+		 * Number of entries in the storage 
+		 * 
+		 * @return numeric - number of rows
+		 *
+		 * @author Michael Pande
+		 */
 		public function length(){
 			
 			try{
@@ -335,9 +421,19 @@
 	}
 	
 
-	
+	/**
+	* Simple Storage Test
+	* 	This class is used for developing, testing and debugging the Simple Storage class (in the same file)
+	*
+	* @author Michael Pande
+	*/
 	class SimpleStorageTest{
 		
+		/**
+		* Start the test
+		*
+		* @author Michael Pande
+		*/
 		public static function test(){
 			
 			$db = new SimpleStorage();

@@ -1,33 +1,54 @@
 <?php 
-	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing and var_dumping. 
-	
-	require('parser/newsItemParse.php');
-	require('parser/DateParser.php');
-	require('parser/errorLogger.php');
-	require('../../../wp-load.php'); // Potentially creates bugs.
-	require('parser/QCodes.php');
+
+/**
+* This PHP file handles all interaction with the Wordpress Database and makes it possible to send HTTP POST requests with 
+* NewsML-G2 in XML to WordPress. 
+* Usage of this REST API requires a key, the key is retrieved from the WordPress database after installing the plugin.
+*
+* RESPONSES:
+* 201: Created * Updated or created new
+* 409: Conflict * Existing GUID & Version >= Current
+* 401: Unauthorized * Wrong key
+*(304: Not modified Something went wrong and it was not modified (no more room in db etc))
+* 400: Bad request (Something wrong with the NewsML-G2)
+* 500: Internal Server Error
+*
+* Untested possible security issues: 
+* 	$_GET injection on key
+*
+*
+* @author Michael Pande
+*/
+ 
+	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing, printing and var_dumping. 
 	$DEBUG = false;
+	$UPDATE_OVERRIDE = false; // True = Ignore versionnumber in NewsItem and do update anyways.
 	
 	if(isset($_GET["debug"]) && $_GET["debug"] == true){
+		error_reporting(E_ALL);
+		ini_set('display_errors', 1);
 		$DEBUG = true;
 	}
 	
-	// POSSIBLE AND KNOWN ISSUES: 
-	// 		Injections on $_GET?
-	//
-	// RESPONSES:
-	// 201: Created // Updated or created new
-	// 409: Conflict // Existing GUID & Version >= Current
-	// 401: Unauthorized // Wrong key
-	// 						(304: Not modified Something went wrong and it was not modified (no more room in db etc))
-	// 400: Bad request (Something wrong with the NewsML-G2)
-	// 500: Internal Server Error
+		if(isset($_GET["update_override"]) && $_GET["update_override"] == true){
+		$UPDATE_OVERRIDE = true;
+	}
+	require('parser/newsItemParse.php'); 	// Parses NewsML-G2 NewsItems 
+	require('parser/DateParser.php'); 		// Parses Date strings
+	require('parser/errorLogger.php'); 		// Logs errors
+	require('../../../wp-load.php'); 		// Potentially creates bugs. Necessary to access methods in the wordpress core from outside.
+	require('parser/QCodes.php'); 			// Handles storage and retrieval of QCodes and their values. 
+	
+
+
+	
+
 	
 	
 	
 
 	
-	// Authentication
+	// Authentication, returns 401 if wrong API key
 	debug("<h3>Authentication</h3>");
 	
 	if(!authentication()){
@@ -35,12 +56,13 @@
 		setHeader(401); // Unauthorized
 		exit;
 	}
-	
 	debug("Successful");
-	debug("REQUEST_METHOD: ".$_SERVER['REQUEST_METHOD']);
+	
+	
+	
+	
 
-	
-	
+	// Checks request method, returns 400 if not HTTP POST
 	if($_SERVER['REQUEST_METHOD'] != 'POST'){
 		debug("The REQUEST_METHOD was not POST");
 		setHeader(400); // Bad Request
@@ -48,38 +70,62 @@
 	}
 
 	
+	
+	
+	 // Gets parameters from the HTTP REQUEST
 	$postdata = getRequestParams();
+	
+	
+	
+	// Sends the posted data to the NewsItemParser and if everything went OK it gets a multidimensional array in return of values.
 	$parsed = newsItemParse::createPost($postdata);
 	
 	
-	debug("<h3>Returned from Parse.php: </h3>");
-	debug($parsed);
 	
-	// If something went wrong during parsing
+	// Show what was returned from NewsItemParse 
+	debug("<h3>Returned from NewsItemParse.php: </h3>");
+	debug($parsed); // var_dumps the values
+	
+	
+	
+	
+	// Checks if something went wrong during parsing
 	if($parsed['status_code'] != 200){
 		setHeader($parsed['status_code']);
 		exit;
 	}
+	
+	
+	
 
-	// For each NewsItem or similar returned from Parse
+	// For each NewsItem or similar returned from NewsItemParse
 	foreach($parsed as $key => $value){
 		
-		// If nothing went wrong during parsing
 		$post = $value['post'];
 		$meta = $value['meta'];
 		$subjects = $value['subjects'];
 		$authors = $value['users'];
+		$photos = $value['photo'];	
 			
 		if($post != null && $meta != null){
-			$wp_error = insertPost($post, $meta, $subjects, $authors);
+			// Insert post, metadata, subjects and creator of post (1 author, not necessarily all) 
+			$wp_error = insertPost($post, $meta, $subjects, $authors, $photos);
 			debug("<h3>Returned from Wordpress: </h3>");
-			debug(var_dump($wp_error));
+			debug($wp_error); // var_dump
+			
 			
 			// Wordpress returns post_id if successful, so a number can be used to confirm a successful post creation.
 			if( is_numeric($wp_error) ) {
 				setAuthors($authors, $wp_error);
 			}
 			
+			
+			
+			
+			
+		// Something vital is missing after parsing
+		}else{
+			debug('$post or $meta is null, importing is now stopped.');
 		}
 	}
 	
@@ -91,8 +137,14 @@
 			
 			
 			
-	
-	// Authenticates and returns true if API key matches the provided key.
+
+	/**
+	 * Authenticates and returns true if API key matches the key sent with HTTP_GET['key'].
+	 * 
+	 * @return boolean
+	 *
+	 * @author Michael Pande
+	 */
 	function authentication(){
 		global $DEBUG;
 		
@@ -109,8 +161,17 @@
 
 	
 	
-	
-	// Returns Wordpress Post by NML2-GUID
+
+	/**
+	 * Returns Wordpress Post by NML2-GUID
+	 *
+	 * This method uses a GUID from the NewsML-G2 and checks for a WordPress post with same GUID meta value.
+	 *
+	 * @param STRING the GUID to match WordPress posts with
+	 * @return First matching post with GUID
+	 *
+	 * @author Michael Pande
+	 */
 	function getPostByGUID($guid){
 		
 		debug("<p><strong>Get post by nml2-guid:</strong> $guid </p>");
@@ -118,7 +179,7 @@
 		
 		
 		
-		// The Loop
+		// The WordPress Loop
 		if ( $the_query->have_posts() ) {
 			
 			
@@ -134,19 +195,40 @@
 	}
 	
 
-	// Inserts the post into the WordPress Database
-	function insertPost($post, $meta, $subjects, $authors){
+	/**
+	 * Inserts:
+	 *    NewsItem (post), 
+	 * 	  NMLG2 meta data, 
+	 *    Keywords(tags), 
+	 *    Subjects(categories),
+	 *    Creators / Contributors (authors) 
+	 * into WordPress 
+	 *
+	 * @param $post - A WP_Post object (array of values)
+	 * @param $meta - An array of metadata 
+	 * @param $subjects - A multidimensional array of subjects containing qcodes, names and misc metadata
+	 * @param $authors - A multidimensional array of users. 
+	 * @return $result - After attempting to create a WP post this result is created.
+	 * @author Michael Pande
+	 */
+	function insertPost($post, $meta, $subjects, $authors, $photos){
 		
 		debug("<h2>Insert Post: </h2>");
 		
 		$existing_post = getPostByGUID($meta['nml2_guid']);
 		
+		
+		// Sets date on WP_POST object, it supports GMT (UTC) and Non-GMT.
 		if(isset($meta['nml2_versionCreated'])){
-			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']);
+			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']); 
 			$post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
 		}
 		
+		// Sets author like the creator, for the single author support in WordPress, multi author support is handled in another method
 		$post['post_author'] = getCreator($authors);
+		
+		
+		
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 		if(	$existing_post != null){
 			debug("<strong>Found post with ID: </strong> $post_id -> Just update existing");
@@ -155,43 +237,63 @@
 			$version = $meta['nml2_version'];
 			
 			// Check if imported version is higher than stored. 
-			if($version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){ // Array Dereferencing (Requires PHP version > 5.4)
+			if($UPDATE_OVERRIDE || $version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){ // Array Dereferencing (Requires PHP version >= 5.4)
 				debug("<p>UPDATE EXISTING RECORD</p>");
 				$post['ID'] = $existing_post->ID; 
 				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
 				
 			}else{
-				debug("<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>"); // Array Dereferencing (Requires PHP version > 5.4)
+				debug("<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>"); // Array Dereferencing (Requires PHP version >= 5.4)
 			}
 		}else{
 			$result = wp_insert_post( $post, true); // Creates new post
 		}
 		
+		// The WP_Post is now either inserted, updated or failed. (See $result)
 		
 		
 		
-		
-		// if POST_ID was returned & meta data was included
+		// If POST_ID was returned & meta data was included
 		if(is_numeric($result) && $meta != null){
 			debug("<h4>Set metadata in Wordpress: </h4>");
 			insertPostMeta($result, $meta);
 			setPostCategories($result, $subjects, $meta['nml2_language']);
-			setHeader(201); // Created
 			
+			insertPhotos($result, $photos);
+			
+			setHeader(201); // Created
+				
 		}
+		
 		if($result == null){
-			setHeader(409); // Conflict
+			setHeader(409); // Conflict (Existing copy with same version number and GUID)
 		}else if(!is_numeric($result)){
 			setHeader(304); // Not modified
 		}
+		
+		
+		
 		
 		return $result;
 		
 	}
 	
 	
+	function insertPhotos($post_id, $photos){
+		debug("<h2>Insert Photos</h2>");
+		debug($photos);
+	}
+	
 
-	// Inserts or updates meta data for a post
+	/**
+	 * This method inserts meta data in to the wordpress database, by using the post_meta table, this process 
+	 * requires a post_id and an associative array of meta data
+	 *
+	 * @param $post_id - integer of post_id 
+	 * @param $meta - An associative array of metadata
+	 * 
+	 * @author Michael Pande
+	 */
 	function insertPostMeta($post_id, $meta){
 		$unique = true; // True: No duplicate with matching Meta_key for post_id
 		
@@ -205,10 +307,17 @@
 	}
 	
 	
-	// Not implemented yet
-	// Purpose: Sets correct post categories for the post
-	// Challenge: Need array of category IDs from DB.
-	// Solutions: Foreach category string, find or create category id. 
+	/**
+	 * This method sets the post categories in WordPress, it requires the QCodes class, which handles QCodes and
+	 * corresponding language values. 
+	 *
+	 * @param $post_id - A WP_Post object id
+	 * @param $subjects - A multidimensional array of subjects containing qcodes, names and misc metadata
+	 * @param $lang - Language of post, used to select from the database of QCodes, as secondary key. 
+	 * @return $result - After attempting to create a WP post this result is created.
+	 *  
+	 * @author Michael Pande
+	 */
 	function setPostCategories($post_id, $subjects, $lang){
 		debug("<h2>setPostCategories</h2>");
 		debug("<strong>Language: </strong> $lang");
@@ -258,7 +367,7 @@
 			if($id == null){
 				debug("GET SUBJECT: " .$subject['qcode'].", $lang");
 				$result = QCodes::getSubject($subject['qcode'], $lang); 
-				var_dump($result);
+				debug($result);
 				if($result != null){
 					$id = createOrGetCategory($result['name']);
 					array_push($category_id, $id);
@@ -276,12 +385,18 @@
 		wp_set_post_categories( $post_id, $category_id, false );
 	}
 
-	// Creates and/or returns category ID for given string
+	/**
+	 * This method creates or gets category for a given string
+	 *
+	 * @param $cat - The displayed category name (The one that will be shown to users in Wordpress)
+	 * @return $result - Wordpress error, or category id. 
+	 *  
+	 * @author Michael Pande
+	 */
 	function createOrGetCategory($cat){
-		if($cat == null){
+		if($cat == null || !is_string($cat) || strlen($cat) == 0){
 			return;
 		}
-		
 		$cat = ucfirst($cat);
 		$cat_id = get_cat_ID( $cat);
 		
@@ -307,7 +422,13 @@
 	
 	
 	
-	// Returns the API key from the Wordpress Database
+	/**
+	 * This method returns the API key stored in the WordPress database.
+	 *
+	 * @return string - The API key. 
+	 *  
+	 * @author Michael Pande
+	 */
 	function getAPIkey(){
 		return get_option("nml2-plugin-api-key");
 		
@@ -317,7 +438,13 @@
 	
 	
 	
-	
+	/**
+	 * This method sets the header with an http status. 
+	 *
+	 * @param int $event - The number that will be set.
+	 *  
+	 * @author Michael Pande
+	 */
 	function setHeader($event){
 		if($event != null){
 			if($event != 200 && $event != 201){
@@ -330,7 +457,14 @@
 	}
 	
 	
-	// Returns first element of array or null.
+	/**
+	 * Returns the creator of the $author array. Which will always be the first or null. (Return in the foreach).
+	 * This method is necessary, for 
+	 *
+	 * @param $authors - array of authors (Creator $ Contributors)
+	 *  
+	 * @author Michael Pande
+	 */
 	function getCreator($authors){
 		debug("<strong>Get creator</strong>");
 		foreach($authors as $nameKey=>$nameVal){
@@ -338,8 +472,18 @@
 			debug("Creator:" . var_dump($creator));
 			return $creator;
 		}
+		return null;
 	}
 	
+	
+	/**
+	 * Set multiple authors on a post, if they don't exist in the Wordpress database, it will create them. 
+	 *
+	 * @param $authors - array of authors (Creator $ Contributors)
+	 * @param $post_id - ID of the post
+	 *  
+	 * @author Michael Pande
+	 */
 	function setAuthors($authors, $post_id){
 		debug("<strong>Set authors</strong>");
 		debug(var_dump($authors));          
@@ -361,7 +505,14 @@
 		
 	}
 	
-	
+	/**
+	 * Creates or gets an author in the WordPress database. 
+	 *
+	 * @param $auth - author (Creator / Contributor)
+	 * @return $result - the result for author creation, retrieved user or a WP_error. 
+	 *
+	 * @author Michael Pande
+	 */
 	function createOrGetAuthor($auth){
 		
 		
@@ -393,7 +544,31 @@
 	
 	
 
-	// Fra Stefan
+
+
+
+	/**
+	 * Returns useful debugging messages if &debug=true
+	 * echos strings and var_dumps everything else.
+	 *
+	 * @param $str - String or item
+	 *
+	 * @author Michael Pande
+	 */
+	function debug($str){
+		global $DEBUG;
+		if($DEBUG){
+			if(is_string($str)){
+				echo "<p>".$str."</p>"; // Using <p> to create new lines. 
+			}else{
+				var_dump($str);
+			}
+		}
+	}
+
+	/**
+	 * @author Stefan Grunert
+	 */
 	function getRequestParams()
 	{
 		 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -406,21 +581,6 @@
 			return file_get_contents("php://input");
 		 }
 	}
-
-
-	// Simplifies code structure.
-	function debug($str){
-		global $DEBUG;
-		if($DEBUG){
-			if(is_string($str)){
-				echo "<p>".$str."</p>"; // Using <p> to create new lines. 
-			}else{
-				var_dump($str);
-			}
-		}
-	}
-
-
 
 
 ?>

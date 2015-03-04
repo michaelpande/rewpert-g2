@@ -1,16 +1,26 @@
 <?php
-/*
-	
-	Retrieves and stores NewsCodes from the IPTC Controlled Vocabulary (CV) for NewsCodes
 
+
+
+require_once('Database/API.php');
+require_once('KnowledgeItem/KnowledgeItem.php');
+
+//QCodes::test(); (Testing method)
+
+
+/**
+* Retrieves and stores NewsCodes (QCodes) from the IPTC Controlled Vocabulary (CV) for NewsCodes
+
+*
+* @author Michael Pande
 */
-require_once('/Database/API.php');
-require_once('/KnowledgeItem/KnowledgeItem.php');
-//QCodes::test();
-
 class QCodes{
 
-	
+	/**
+	 * Method for testing functionality, and debugging.
+	 *
+	 * @author Michael Pande
+	 */
 	public static function test(){
 		
 	
@@ -18,7 +28,7 @@ class QCodes{
 		QCodes::update("KnowledgeItem/test_subjectcode-en.xml");
 		QCodes::update("KnowledgeItem/test_mediatopic.xml");
 		QCodes::update("KnowledgeItem/test_scene.xml");
-		//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB"); // Max 10/h 
+		//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB"); // Max 10/hour 
 		
 	
 	}
