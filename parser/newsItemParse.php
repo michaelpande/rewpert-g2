@@ -38,14 +38,14 @@ class NewsItemParse {
 										'user_email'	=> string
 										'nml2_qcode'	=> string
 										'nml2_uri'		=> string
-									 );'
+									 );
 								1 => user = array(
 										'user_login' 	=> string
 										'description'	=> string
 										'user_email'	=> string
 										'nml2_qcode'	=> string
 										'nml2_uri'		=> string
-									 );'
+									 );
 								2 => Same as the indexes above. Number of indexes depends on number of creators and contributors
 									 The first index is always the creator, and all other the contributors
 					'subjects' => $subjects = array(
@@ -90,8 +90,8 @@ class NewsItemParse {
 																			);
 																'type' 	 => string
 																'uri' 	 => string
-														  1 => same as the index above. Number of indexes depends on number of broader tags under a subjects
 																);
+														  1 => same as the index above. Number of indexes depends on number of broader tags under a subjects
 														  );
 										);
 									1 => same as the index above. Number of indexes depends on number of subjects
@@ -118,6 +118,7 @@ class NewsItemParse {
 	//A variable holding the namespace of the xml file
 	//Automatic set to empty string and changed if xml has a namespace in its outermost tag
 	private static $ns = "";
+	private static $photoFound = false;
 	
 	/**
 	 * Creates and returns the array structure that are sent to the RESTApi
@@ -131,6 +132,7 @@ class NewsItemParse {
 	 */
 	public static function createPost($file){
 		global $ns;
+		global $photoFound;
 		$doc = new DOMDocument();
 		
 		//Checks if $file is raw XML or a XML file and uses the correct load operation
@@ -173,8 +175,10 @@ class NewsItemParse {
 				'meta'  	=> self::createMetaArray($newsItem, $xpath), //array
 				'users' 	=> self::createUserArray($newsItem, $xpath), //array
 				'subjects' 	=> self::createSubjectArray($newsItem, $xpath), //array
-				'photo' 	=> self::createPhotoArray($newsItem, $xpath) //array
+				'photo' 	=> array( )
 			);
+			
+			$returnArray = self::createPhotoArray($newsItem, $xpath, $returnArray);
 			
 			//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
 			$returnArray['status_code'] = self::setStatusCode($returnArray, $newsItemArray);
@@ -185,7 +189,10 @@ class NewsItemParse {
 			}
 			
 			//Adds the information found in the newsItem to the array that will be sent to the RESTApi
-			array_push($returnArray, $newsItemArray);
+			if(!$photoFound) {
+				array_push($returnArray, $newsItemArray);
+				$photoFound = false;
+			}
 		}
 		
 		return $returnArray;	
@@ -284,7 +291,7 @@ class NewsItemParse {
 			$user = array(
 				'user_login' 	=> self::getUserName($node, $xpath), //string login_name of the user
 				'description'	=> self::getUserDescription($node, $xpath), //string, describing the role of the user
-				'user_email'	=> self::getUserEmail($node, $xpath),
+				'user_email'	=> self::getUserEmail($node, $xpath), //string, the email of the user 
 				'nml2_qude'		=> self::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
 				'nml2_uri'		=> self::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
@@ -341,32 +348,42 @@ class NewsItemParse {
 	 * @return array contaning all subjects
 	 * @author Petter Lundberg Olsen
 	 */
-	private static function createPhotoArray($newsItem, $xpath) {
+	private static function createPhotoArray($newsItem, $xpath, $returnArray) {
 		global $ns;
+		global $photoFound;
 		$photos = array( );
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentSet/remoteContent
 		*/
 		$nodelist = $xpath->query($ns."contentSet/".$ns."remoteContent", $newsItem);
+
 		
 		//This loop creates an array containing information about each photo
 		foreach($nodelist as $node) {
-			$photo = array( 
-				'href' 		  => self::getPhotoHref($node, $xpath), //string, the source of the image
-				'size' 		  => self::getPhotoSize($node, $xpath), //string, the size of the image in bytes 
-				'width' 	  => self::getPhotoWidth($node, $xpath), //string, the width of the picture in px
-				'height' 	  => self::getPhotoHeight($node, $xpath), //string, the height of the image
-				'contenttype' => self::getPhotoContenttype($node, $xpath), //string, what type of file the image is
-				'colourspace' => self::getPhotoColourspace($node, $xpath), //string, what colorspace the image is
-				'rendition'   => self::getPhotoRendition($node, $xpath), //string, tells if the image is higres, meant for web, or is a thumbnail
-				'description' => self::getPhotoDescription($newsItem, $xpath)
-			);
+			$guid = self::getPhotoTextGuid($newsItem, $xpath);
+			for($i = 0; $i < count($returnArray); $i++) {
+				if(strcmp($returnArray[$i]['meta']['nml2_guid'], $guid) == 0) {
+					$photo = array( 
+					'href' 		  => self::getPhotoHref($node, $xpath), //string, the source of the image
+					'size' 		  => self::getPhotoSize($node, $xpath), //string, the size of the image in bytes 
+					'width' 	  => self::getPhotoWidth($node, $xpath), //string, the width of the picture in px
+					'height' 	  => self::getPhotoHeight($node, $xpath), //string, the height of the image
+					'contenttype' => self::getPhotoContenttype($node, $xpath), //string, what type of file the image is
+					'colourspace' => self::getPhotoColourspace($node, $xpath), //string, what colorspace the image is
+					'rendition'   => self::getPhotoRendition($node, $xpath), //string, tells if the image is higres, meant for web, or is a thumbnail
+					'description' => self::getPhotoDescription($newsItem, $xpath)
+					);
 			
-			array_push($photos, $photo);
+					array_push($returnArray[$i]['photo'], $photo); 
+					$photoFound = true;
+				}
+			}
+			
+			
 		}
 		
-		return $photos;
+		return $returnArray;
 	}
 	
 	/**
@@ -1445,8 +1462,9 @@ class NewsItemParse {
 	private static function setEbargoState($embargo) {
 		if($embargo === null) {
 			return 'publish';
+		} else {
+			return'future';
 		}
-		return 'future';
 		
 	}
 	
@@ -1468,14 +1486,28 @@ class NewsItemParse {
 		$nodelist = $xpath->query($ns."itemMeta/".$ns."pubStatus/@qcode", $newsItem);
 		
 		foreach($nodelist as $node) {
-			if(strcmp($node->nodeValue, "stat:usable") == 0) {
-				return 'publish';
+			if(strcmp($node->nodeValue, "stat:withheld") == 0) {
+				return 'pending';
 			} elseif (strcmp($node->nodeValue, "stat:canceled") == 0) {
 				return 'trash';
 			}
 		}
 		
-		return 'pending';
+		return 'publish';
+	}
+	
+	private static function getPhotoTextGuid($newsItem, $xpath) {
+		global $ns;
+		
+		$pGuid = $xpath->query("@guid", $newsItem)->item(0)->nodeValue;
+
+		$group = $xpath->query("//".$ns."group[./".$ns."itemRef/@residref = '".$pGuid."']")->item(0);
+
+		$itemRef = $xpath->query($ns."itemRef[./".$ns."itemClass/@qcode='ninat:text']", $group)->item(0);
+		
+		$tGuid = $residref = $xpath->query("@residref", $itemRef)->item(0)->nodeValue;
+		
+		return $tGuid;
 	}
 	
 }
