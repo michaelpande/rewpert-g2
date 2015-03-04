@@ -1,0 +1,39 @@
+html {
+  height: 100%;
+}
+
+body {
+  background-color: white;
+  font-family: 'open sans';
+  position: relative;
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+}
+
+/****************
+  content
+  **************/
+.header {
+  background-color: #ecf0f1;
+}
+
+/*USE THIS TO CENTER ANYTHING*/
+.centerblock {
+  text-align:center;
+}
+/****************
+  buttons
+  **************/
+
+.button {
+  display: inline-block;
+  background-color:#4B77BE;
+  border-radius: 0.2em;
+  width: 12em;
+  color: white;
+  text-align:center;
+  padding:0.7em;
+}
