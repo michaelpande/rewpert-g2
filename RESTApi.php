@@ -30,7 +30,7 @@
 		$DEBUG = true;
 	}
 	
-		if(isset($_GET["update_override"]) && $_GET["update_override"] == true){
+	if(isset($_GET["update_override"]) && $_GET["update_override"] == true){
 		$UPDATE_OVERRIDE = true;
 	}
 	require('parser/newsItemParse.php'); 	// Parses NewsML-G2 NewsItems 
@@ -212,7 +212,7 @@
 	 * @author Michael Pande
 	 */
 	function insertPost($post, $meta, $subjects, $authors, $photos){
-		
+		global $UPDATE_OVERRIDE;
 		debug("<h2>Insert Post: </h2>");
 		
 		$existing_post = getPostByGUID($meta['nml2_guid']);

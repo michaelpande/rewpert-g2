@@ -42,6 +42,7 @@ body{
 .last{
   background: #262626;
   padding: 4em;
+  box-shadow: 0px 5000px 0px 5000px #262626;
 }
 
 .btn-primary{
