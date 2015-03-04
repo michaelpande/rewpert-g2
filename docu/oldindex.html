@@ -7,7 +7,7 @@
   	<meta name="description" content="A RESTful plugin that let you publish NewsML-G2 content directly to WordPress"/>
   	<link rel="image_src" href="/images/jumpto_image.png" />
   	<meta content="http://www.diego.no" property="og:url" />
-  	<link rel="shortcut icon" id="favicon" href="favicon.png"> 
+  	<link rel="shortcut icon" id="favicon" href="favicon.png">
   	<meta name="author" content="Diego Alonso Pasten Bahamondes">
   	<link rel="canonical" href="http://www.diego.no" />
   	<link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css'>
@@ -25,38 +25,33 @@
   	      secondLevel: "> h3"
   	    });
   	  });
-  		
   	</script>
   </head>
-
-
 
   <body>
     <div class="wrapper">
   	  <div class="main">
-  	    <div class="header">
-          <h1 class="headertitle">NewsPress G2</h1>
-          <h2 class="headertitle">A RESTful plugin that let you publish NewsML-G2 content directly to WordPress</h2>
-          <div class="btns">
-    	      <a target="_blank" class="reload btn" href="http://bitbucket.org">Install on WordPress</a>
-    	    </div>
+  	    <div class="header centerblock">
+          <h1>NewsPress G2</h1>
+          <h2>A RESTful plugin that let you push NewsML G2 effortlesly to WordPress</h2>
+        </div>
+        <div>
+    	      <a target="_blank" class="button" href="http://bitbucket.org">Install on WordPress</a>
+            <a target="_blank" class="button" href="demo site">Try our live demo</a>
     	  </div>
+
+        <div class="secondRow">
+          Clone from BitBucket
+          <a href="https://bitbucket.org/michaelpande/newsml-g2-restful-wordpress-import/src"><img src="sourcetree_logo.png" alt="Fork me on GitHub"></a>
+        </div>
+
+
         <div class="page_container">
-
-
-<ul><li>html</li></ul>
-
-
           <div class="jumpto-block">
             <h2>What is this?</h2>
             <p>This plugin was made by Michael Pande, Petter L. Olsen and Diego Alonso Pasten Bahamondes.
               It is a restful plugin that will extract content from NewsML-G2 documents and then publish it directly to WordPress </p>
           </div>
-
-
-
-
-
 
           <div class="jumpto-block">
             <h2>Getting started</h2>
@@ -75,9 +70,6 @@
             <h3>How to import</h3>
           </div>
 
-
-
-
           <div class="jumpto-block">
             <h2>Code examples</h2>
             <h3>PHP</h3>
@@ -85,7 +77,7 @@
               <p>An example of how to push content with PowerShell.</p>
               <pre class="prettyprint">
 $wc = new-object System.Net.WebClient
-ls *.xml | foreach { 
+ls *.xml | foreach {
 $wc.UploadFile(
 'http://localhost/Wordpress/wp-content/plugins/RESTful%20NewsML-G2/RESTApi.
 php?key=1c1b15f59f5c4046ba5061e7465ff832b6272cb7830aa685c7ad1adcd17822ba&debug=true'
@@ -118,27 +110,17 @@ php?key=1c1b15f59f5c4046ba5061e7465ff832b6272cb7830aa685c7ad1adcd17822ba&debug=t
 
           </div>
 
-
-
-
-
-
-
           <div class="jumpto-block">
             <h2>About</h2>
           </div>
-        </div>
+        </div> <!-- End of Page Container div -->
 
-
-
-        
         <div class="other">
           <p>Any information you don't want included in the menu, is put under any other class than "jumpto-block"</p>
         </div>
       </div>
       <a class="back" href="http://www.wordpress.org">WordPress.org</a>
-      <a href="https://bitbucket.org/michaelpande/newsml-g2-restful-wordpress-import/src"><img style="position: absolute; top: 0; right: 0; border: 0; height: 65px;" src="sourcetree_logo.png" alt="Fork me on GitHub"></a>
-    </div>
+    </div> <!-- end of Wrapper -->
     <body onload="prettyPrint()">
   </body>
 </html>
