@@ -321,7 +321,7 @@
 	function setPostCategories($post_id, $subjects, $lang){
 		debug("<h2>setPostCategories</h2>");
 		debug("<strong>Language: </strong> $lang");
-		var_dump($subjects);
+		debug($subjects);
 		$category_id = array();
 
 		
@@ -329,7 +329,7 @@
 		foreach($subjects as $key=>$subject){
 			$id = null;
 			// Have to find match on language 
-			var_dump($subject);
+			debug($subject);
 			foreach($subject['name'] as $nameKey=>$nameVal){
 				$id = null;
 				// If subject with name and correct lanuage is found
@@ -374,7 +374,6 @@
 				}	
 				
 			}
-			
 			
 			
 			createOrGetCategory($subject);
@@ -549,7 +548,7 @@
 
 	/**
 	 * Returns useful debugging messages if &debug=true
-	 * echos strings and var_dumps everything else.
+	 * echos strings and xs everything else.
 	 *
 	 * @param $str - String or item
 	 *
