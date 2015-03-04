@@ -438,7 +438,7 @@ class NewsItemParse {
 		  The length of the $nodelist should only be 1 if the newsML is created correctly
 		*/
 		foreach($nodelist as $node) {
-            $content = $node->nodeValue;
+            $content = self::get_inner_html($node);
         }
 
         return $content;
@@ -1509,5 +1509,30 @@ class NewsItemParse {
 		
 		return $tGuid;
 	}
+	
+	/**
+	 * Forklarende tekst
+	 *
+	 * Utfylende text
+	 *
+	 * @param DOMNode $node
+	 *
+	 * Attribution:
+	 * This method in gathered from a Stack Overflow when trying to solve a problem whit DOMNode stripping HTML tags
+	 * Link to question: http://stackoverflow.com/questions/6286362/php-dom-get-nodevalue-html-without-stripping-tags
+	 * Question authors:
+	 *	Marty - http://stackoverflow.com/users/786758/marty
+	 *  GetFree - http://stackoverflow.com/users/25700/getfree
+	 * Answer author:
+	 *  regex - http://stackoverflow.com/users/23869/regex
+	 */
+	function get_inner_html( $node ) { 
+    $innerHTML= ''; 
+    $children = $node->childNodes; 
+    foreach ($children as $child) { 
+        $innerHTML .= $child->ownerDocument->saveXML( $child ); 
+    } 
+
+    return $innerHTML;  }
 	
 }
