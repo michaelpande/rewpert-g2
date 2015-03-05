@@ -20,7 +20,8 @@
 * @author Michael Pande
 */
  
-	ob_start(); // Turns output buffering on, making it possible to modify header information after echoing, printing and var_dumping. 
+	// Turns output buffering on, making it possible to modify header information after echoing, printing and var_dumping. 
+	ob_start();
 	$DEBUG = false;
 	$UPDATE_OVERRIDE = false; // True = Ignore versionnumber in NewsItem and do update anyways.
 	
@@ -40,7 +41,7 @@
 	require('parser/QCodes.php'); 			// Handles storage and retrieval of QCodes and their values. 
 	
 
-
+	
 	
 
 	
@@ -107,7 +108,7 @@
 		$authors = $value['users'];
 		$photos = $value['photo'];	
 			
-		if($post != null && $meta != null){
+		if($post != null && $meta != null && ($post['post_content'] != null || $post['post_title'] != null)){
 			// Insert post, metadata, subjects and creator of post (1 author, not necessarily all) 
 			$wp_error = insertPost($post, $meta, $subjects, $authors, $photos);
 			debug("<h3>Returned from Wordpress: </h3>");
@@ -175,8 +176,14 @@
 	function getPostByGUID($guid){
 		
 		debug("<p><strong>Get post by nml2-guid:</strong> $guid </p>");
-		$the_query = new WP_Query( "post_type=post&meta_key=nml2_guid&meta_value=$guid&order=ASC" );
+		$args = array(
+			'meta_key' => 'nml2_guid',
+			'meta_value' => $guid,
+			'post_status' => 'any'
+		);
+		$the_query = new WP_Query( $args );
 		
+		debug($the_query);
 		
 		
 		// The WordPress Loop
@@ -216,10 +223,13 @@
 		debug("<h2>Insert Post: </h2>");
 		
 		$existing_post = getPostByGUID($meta['nml2_guid']);
-		
+		debug("<strong>Existing post: </strong>");
+		debug($existing_post);
 		
 		// Sets date on WP_POST object, it supports GMT (UTC) and Non-GMT.
 		if(isset($meta['nml2_versionCreated'])){
+			debug("Dato Non-GMT" . DateParser::getNonGMT($meta['nml2_versionCreated']));
+			debug("Dato GMT" . DateParser::getGMTDatetime($meta['nml2_versionCreated']));
 			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']); 
 			$post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
 		}
@@ -247,6 +257,7 @@
 			}
 		}else{
 			$result = wp_insert_post( $post, true); // Creates new post
+			
 		}
 		
 		// The WP_Post is now either inserted, updated or failed. (See $result)
@@ -258,8 +269,8 @@
 			debug("<h4>Set metadata in Wordpress: </h4>");
 			insertPostMeta($result, $meta);
 			setPostCategories($result, $subjects, $meta['nml2_language']);
-			
-			insertPhotos($result, $photos);
+			$post['ID'] = $result;
+			insertPhotos($result, $post, $photos);
 			
 			setHeader(201); // Created
 				
@@ -268,6 +279,8 @@
 		if($result == null){
 			setHeader(409); // Conflict (Existing copy with same version number and GUID)
 		}else if(!is_numeric($result)){
+			debug("Returned from wordpress");
+			debug( $result);
 			setHeader(304); // Not modified
 		}
 		
@@ -279,11 +292,114 @@
 	}
 	
 	
-	function insertPhotos($post_id, $photos){
+	function insertPhotos($post_id, $post, $photos){
 		debug("<h2>Insert Photos</h2>");
-		debug($photos);
+		$count = 0;
+		$firstUrl = null;
+		$setFeatureImage = true;
+		
+		foreach($photos as $key=>$val){
+				if($val["href"] != null){
+					$count++;
+					$image = wp_get_image_editor( $val["href"] );
+					debug("<strong>Check for WP_ERROR</strong>");
+					if ( ! is_wp_error( $image ) ) {
+						debug("No error");
+						$imgUrl = '/images/'.$post_id.'/' . $count . '.jpg';
+						debug("ImageUrl: " . $imgUrl);
+						
+						$orig_filename = basename($val["href"]);
+						debug("Original filename: " . $orig_filename);
+						$image->save( ".".$imgUrl );
+	
+						
+						
+						$pattern = "/(src=)[\"\'](.*)".$orig_filename."[\"\']/";
+						debug("Pattern: " . $pattern);
+						
+						$new_url = "src=\"". getPathToPluginDir() .$imgUrl."\"";
+						if($firstUrl == null){
+							$firstUrl = getPathToPluginDir() .$imgUrl;
+							$new_url = "";
+						}
+						
+						
+						$post['post_content'] = preg_replace($pattern,$new_url,$post['post_content'],-1);
+						
+				
+						debug($post);
+						debug($image);
+					}else{debug("Error");}
+					
+				}
+				
+				
+		}
+		
+		$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
+		
+		// Set feature image 
+		if($firstUrl != null){
+			
+			setFeatureImage($post_id, $firstUrl);
+
+			//update_post_meta($post_id, '_wp_attached_file', $firstUrl);
+		}
+		
+		debug("<strong>Result from WP_UPDATE:</strong>");
+		debug($result);		
+
 	}
 	
+	
+	
+	/* Attribution:
+	 * The code in this method is from Stack Overflow 
+	 * Link to question: http://wordpress.stackexchange.com/questions/100838/
+	 * Question authors:
+	 *	Faisal Shehzad - http://wordpress.stackexchange.com/users/30847/faisal-shehzad
+	 * Answer author:
+	 *  GhostToast - http://wordpress.stackexchange.com/users/13676/ghosttoast */
+	function setFeatureImage($post_id, $url){
+		
+		// only need these if performing outside of admin environment
+		require_once(ABSPATH . 'wp-admin/includes/media.php');
+		require_once(ABSPATH . 'wp-admin/includes/file.php');
+		require_once(ABSPATH . 'wp-admin/includes/image.php');
+
+		// example image
+		$image = 'http://example.com/logo.png';
+
+		// magic sideload image returns an HTML image, not an ID
+		$media = media_sideload_image($url, $post_id);
+
+		// therefore we must find it so we can set it as featured ID
+		if(!empty($media) && !is_wp_error($media)){
+			$args = array(
+				'post_type' => 'attachment',
+				'posts_per_page' => -1,
+				'post_status' => 'any',
+				'post_parent' => $post_id
+			);
+
+			// reference new image to set as featured
+			$attachments = get_posts($args);
+
+			if(isset($attachments) && is_array($attachments)){
+				foreach($attachments as $attachment){
+					// grab source of full size images (so no 300x150 nonsense in path)
+					$image = wp_get_attachment_image_src($attachment->ID, 'full');
+					// determine if in the $media image we created, the string of the URL exists
+					if(strpos($media, $image[0]) !== false){
+						// if so, we found our image. set it as thumbnail
+						set_post_thumbnail($post_id, $attachment->ID);
+						// only want one image
+						break;
+					}
+				}
+			}
+		}
+	}
 
 	/**
 	 * This method inserts meta data in to the wordpress database, by using the post_meta table, this process 
@@ -466,11 +582,18 @@
 	 */
 	function getCreator($authors){
 		debug("<strong>Get creator</strong>");
+		
 		foreach($authors as $nameKey=>$nameVal){
+			
 			$creator = createOrGetAuthor($nameVal);
-			debug("Creator:" . var_dump($creator));
-			return $creator;
+			
+			if($creator != null || $creator == ""){
+				debug("Creator:");
+				debug($creator);
+				return $creator;
+			}
 		}
+		
 		return null;
 	}
 	

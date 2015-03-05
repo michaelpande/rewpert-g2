@@ -230,7 +230,7 @@ class DateParser{
 	
 
 
-	public static function getGMTDateTime($date){
+	public static function getNonGMT($date){
 	
 	
 		
@@ -276,13 +276,13 @@ class DateParser{
 	
 	
 	// Removes offset and returns a simple datetime 
-	public static function getNonGMT($date){
+	public static function getGMTDateTime($date){
 		// Get offset
 		preg_match('((\+|-)\w{2}:\w{2})', $date, $offset);
 		if(isset($offset[0])){
 			$date = str_replace($offset[0], "", $date); // Removes offset from date;
 		}
-		return DateParser::getGMTDateTime($date);
+		return DateParser::getNonGMT($date);
 	}
 	
 	
