@@ -11,6 +11,7 @@
 	Important notes:
 		The GMT time is always the same as UTC
 		
+	@author: Michael Pande	
 */
 
 //DateParser::testGMT();
@@ -22,21 +23,22 @@ class DateParser{
 	// Tests GMT method and returns a boolean 
 	public static function testGMT(){
 
+		echo "<h3>Test GMT</h3>";
 		// Arrange
 		$date1 = "2015-01-28";				// Only date
 		$correct1 = DateParser::readableDate(new DateTime("2015-01-28 00:00:00")); 
 		
-		$date2 = "2015-01-28T11:38:30+00:00"; // Plus zero from UTC
+		$date2 = "2015-01-28T11:38:30+00:00"; // Plus zero to UTC
 		$correct2 = DateParser::readableDate(new DateTime("2015-01-28 11:38:30"));
 		
-		$date3 = "2015-01-28T16:14:49-01:30";  // Plus from UTC
-		$correct3 = DateParser::readableDate(new DateTime("2015-01-28 14:44:49"));
+		$date3 = "2015-01-28T16:14:49-01:30";  // Subtract to get UTC
+		$correct3 = DateParser::readableDate(new DateTime("2015-01-28 17:44:49"));
 		
-		$date4 = "2015-01-28T18:00:00-02:30"; // Minus from UTC
-		$correct4 = DateParser::readableDate(new DateTime("2015-01-28 15:30:00"));
+		$date4 = "2015-01-28T18:00:00-02:30"; // Subtract to get UTC
+		$correct4 = DateParser::readableDate(new DateTime("2015-01-28 20:30:00"));
 		
 		$date5 = "2013-08-21T16:38:18+02:00"; // From NML-G2 Document
-		$correct5 = DateParser::readableDate(new DateTime("2013-08-21 18:38:18"));
+		$correct5 = DateParser::readableDate(new DateTime("2013-08-21 14:38:18"));
 		
 		$date6 = "2013-08-25T18:11:07.000Z"; // Timezone added
 		$correct6 = DateParser::readableDate(new DateTime("2013-08-25 18:11:07"));
@@ -49,9 +51,8 @@ class DateParser{
 		
 		
 		$date9 = "2014-11-21T16:25:32-05:00"; // From NML-G2 Document
-		$correct9 = DateParser::readableDate(new DateTime("2014-11-21 11:25:32"));
+		$correct9 = DateParser::readableDate(new DateTime("2014-11-21 21:25:32"));
 		
-		// Test for endring av dag basert på minus og pluss
 		
 		
 		// Act
@@ -125,7 +126,8 @@ class DateParser{
 	
 	// Tests GMT method and returns a boolean 
 	public static function testNonGMT(){
-
+		
+		echo "<h3>Test Non-GMT</h3>";
 		// Arrange
 		$date1 = "2015-01-28";				// Only date
 		$correct1 = DateParser::readableDate(new DateTime("2015-01-28 00:00:00")); 
@@ -230,7 +232,7 @@ class DateParser{
 	
 
 
-	public static function getNonGMT($date){
+	public static function getGMTDateTime($date){
 	
 	
 		
@@ -252,16 +254,16 @@ class DateParser{
 			$hours = $offset[0];
 			
 			if($operation == "+")	
-				date_add($date, date_interval_create_from_date_string("$hours[0] hours"));
-			if($operation == "-")	
 				date_sub($date, date_interval_create_from_date_string("$hours[0] hours"));
+			if($operation == "-")	
+				date_add($date, date_interval_create_from_date_string("$hours[0] hours"));
 			
 			// Add minutes
 			$minutes = $offset[0];
 			if($operation == "+")	
-				date_add($date, date_interval_create_from_date_string("$minutes[1] minutes"));
-			if($operation == "-")	
 				date_sub($date, date_interval_create_from_date_string("$minutes[1] minutes"));
+			if($operation == "-")	
+				date_add($date, date_interval_create_from_date_string("$minutes[1] minutes"));
 				
 			return DateParser::readableDate($date);
 		}
@@ -275,14 +277,14 @@ class DateParser{
 	}
 	
 	
-	// Removes offset and returns a simple datetime 
-	public static function getGMTDateTime($date){
+	// Removes offset and returns a simple datetime, will just return the time.
+	public static function getNonGMT($date){
 		// Get offset
 		preg_match('((\+|-)\w{2}:\w{2})', $date, $offset);
 		if(isset($offset[0])){
 			$date = str_replace($offset[0], "", $date); // Removes offset from date;
 		}
-		return DateParser::getNonGMT($date);
+		return DateParser::getGMTDateTime($date);
 	}
 	
 	

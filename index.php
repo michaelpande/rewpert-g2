@@ -151,20 +151,7 @@
 				
 		
 		return $posts;	
-		/* 
-		$meta_query_args = array(
-			'relation' => 'OR',
-								
-			'meta_query' => array(
-								
-								  array(
-										'key'     => 'nml2_multiple_authors',
-										'value'   => $ID,
-										'compare' => 'LIKE'
-									)
-				)
-			);
-			*/
+
 		
 		
 		

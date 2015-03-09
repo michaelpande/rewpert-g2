@@ -112,7 +112,7 @@
 			// Insert post, metadata, subjects and creator of post (1 author, not necessarily all) 
 			$wp_error = insertPost($post, $meta, $subjects, $authors, $photos);
 			debug("<h3>Returned from Wordpress: </h3>");
-			debug($wp_error); // var_dump
+			debug($wp_error);
 			
 			
 			// Wordpress returns post_id if successful, so a number can be used to confirm a successful post creation.
@@ -126,7 +126,7 @@
 			
 		// Something vital is missing after parsing
 		}else{
-			debug('$post or $meta is null, importing is now stopped.');
+			debug('$post ($post, $post["post_content"], $post["post_title"]) or $meta is null, importing is now stopped.');
 		}
 	}
 	
@@ -176,11 +176,13 @@
 	function getPostByGUID($guid){
 		
 		debug("<p><strong>Get post by nml2-guid:</strong> $guid </p>");
+		
 		$args = array(
 			'meta_key' => 'nml2_guid',
 			'meta_value' => $guid,
 			'post_status' => 'any'
 		);
+		
 		$the_query = new WP_Query( $args );
 		
 		debug($the_query);
@@ -209,12 +211,13 @@
 	 *    Keywords(tags), 
 	 *    Subjects(categories),
 	 *    Creators / Contributors (authors) 
-	 * into WordPress 
+	 * 	into WordPress 
 	 *
 	 * @param $post - A WP_Post object (array of values)
 	 * @param $meta - An array of metadata 
 	 * @param $subjects - A multidimensional array of subjects containing qcodes, names and misc metadata
 	 * @param $authors - A multidimensional array of users. 
+	 * @param $photos - A multidimensional array of photos. 
 	 * @return $result - After attempting to create a WP post this result is created.
 	 * @author Michael Pande
 	 */
@@ -291,7 +294,23 @@
 		
 	}
 	
-	
+	/**
+	 * Inserts:
+	 *    NewsItem (post), 
+	 * 	  NMLG2 meta data, 
+	 *    Keywords(tags), 
+	 *    Subjects(categories),
+	 *    Creators / Contributors (authors) 
+	 * 	into WordPress 
+	 *
+	 * @param $post - A WP_Post object (array of values)
+	 * @param $meta - An array of metadata 
+	 * @param $subjects - A multidimensional array of subjects containing qcodes, names and misc metadata
+	 * @param $authors - A multidimensional array of users. 
+	 * @param $photos - A multidimensional array of photos. 
+	 * @return $result - After attempting to create a WP post this result is created.
+	 * @author Michael Pande
+	 */
 	function insertPhotos($post_id, $post, $photos){
 		debug("<h2>Insert Photos</h2>");
 		$count = 0;
@@ -402,6 +421,9 @@
 		}
 	}
 
+	
+	
+	
 	/**
 	 * This method inserts meta data in to the wordpress database, by using the post_meta table, this process 
 	 * requires a post_id and an associative array of meta data
@@ -444,13 +466,15 @@
 		
 		//foreach subject in meta
 		foreach($subjects as $key=>$subject){
-			$id = null;
+			
 			// Have to find match on language 
 			debug($subject);
 			foreach($subject['name'] as $nameKey=>$nameVal){
 				$id = null;
+				
 				// If subject with name and correct lanuage is found
 				if($nameVal['lang'] == $lang || $nameVal['lang'] == null){
+
 					// Will use 'name' if set 
 					debug("Lang is $lang");
 					if($nameVal['text'] != null && $nameVal['role'] != "nrol:mnemonic"){

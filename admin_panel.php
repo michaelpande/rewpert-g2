@@ -23,15 +23,13 @@
 		$key = bin2hex(openssl_random_pseudo_bytes(32));
 		add_option( 'nml2-plugin-api-key', $key, '', 'yes' ); 
 		return $key;
-		//add_option( 'myhack_extraction_length', '255', '', 'yes' ); 
 	}
 	
 	// Stores API key in database
 	function updateAPIkey(){
 		$key = bin2hex(openssl_random_pseudo_bytes(32));
 		update_option( 'nml2-plugin-api-key', $key, '', 'yes' ); 
-		return $key;
-		//add_option( 'myhack_extraction_length', '255', '', 'yes' ); 
+		return $key; 
 	}
 
 
