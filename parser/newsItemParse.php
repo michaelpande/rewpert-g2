@@ -117,8 +117,9 @@ class NewsItemParse {
 	
 	//A variable holding the namespace of the xml file
 	//Automatic set to empty string and changed if xml has a namespace in its outermost tag
-	private static $ns = "";
-	private static $photoFound = false;
+	private static $ns;
+	private static $addToArray;
+
 	
 	/**
 	 * Creates and returns the array structure that are sent to the RESTApi
@@ -132,8 +133,11 @@ class NewsItemParse {
 	 */
 	public static function createPost($file){
 		global $ns;
-		global $photoFound;
+		global $addToArray;
+
+		$addToArray = true;
 		$doc = new DOMDocument();
+		
 		
 		//Checks if $file is raw XML or a XML file and uses the correct load operation
 		if(is_file($file)) {
@@ -144,7 +148,7 @@ class NewsItemParse {
 		}
 		
 		//Finds the namespace of the outermost tag in the xml file
-		$uri = $doc->documentElement->lookupnamespaceURI(NULL);
+		$uri = $doc->documentElement->lookupnamespaceURI(null);
 
 		
         $xpath = new DOMXPath($doc);
@@ -154,7 +158,7 @@ class NewsItemParse {
 		$xpath->registerNamespace('nitf', "http://iptc.org/std/NITF/2006-10-18/");
 		
 		//Test to see if $uri if not equal to ""
-		if(strcmp("",$uri) != 0) {
+		if($uri != null) {
 			$xpath->registerNamespace("docNamespace", $uri);
 			$ns = "docNamespace:";
 		}
@@ -167,7 +171,7 @@ class NewsItemParse {
 		$returnArray = array( 
 			'status_code' => 200 //int, the status code automatically set to 200
 		);
-		
+
 		//Files the given array for each newsItem
 		foreach($newsItemList as $newsItem) {
 			$newsItemArray = array(
@@ -188,13 +192,14 @@ class NewsItemParse {
 			}
 			
 			//Adds the information found in the newsItem to the array that will be sent to the RESTApi
-			if(!$photoFound) {
+			if($addToArray) {
 				//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
 				$returnArray['status_code'] = self::setStatusCode($returnArray, $newsItemArray);
-				
 				array_push($returnArray, $newsItemArray);
-				$photoFound = false;
+				
 			}
+			$addToArray = true;
+				
 		}
 		
 		return $returnArray;	
@@ -263,6 +268,7 @@ class NewsItemParse {
 	 */
 	private static function createUserArray($newsItem, $xpath) {
 		global $ns;
+		
 		$users = array( );
 		
 		/*Query path that continues from first query at the start of the document.
@@ -352,17 +358,22 @@ class NewsItemParse {
 	 */
 	private static function createPhotoArray($newsItem, $xpath, $returnArray) {
 		global $ns;
-		global $photoFound;
+		global $addToArray;
 		$photos = array( );
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentSet/remoteContent
 		*/
 		$nodelist = $xpath->query($ns."contentSet/".$ns."remoteContent", $newsItem);
-		
+
 		//This loop creates an array containing information about each photo
 		foreach($nodelist as $node) {
 			$guid = self::getPhotoTextGuid($newsItem, $xpath);
+			
+			if($guid == null) {
+				$addToArray = false;
+				return $returnArray;
+			}
 			
 			for($i = 0; $i < count($returnArray); $i++) {
 				if(strcmp($returnArray[$i]['meta']['nml2_guid'], $guid) == 0) {
@@ -376,9 +387,10 @@ class NewsItemParse {
 					'rendition'   => self::getPhotoRendition($node, $xpath), //string, tells if the image is higres, meant for web, or is a thumbnail
 					'description' => self::getPhotoDescription($newsItem, $xpath)
 					);
-			
+					
 					array_push($returnArray[$i]['photo'], $photo); 
-					$photoFound = true;
+					$addToArray = false;
+					
 				}
 			}	
 		}
@@ -405,7 +417,7 @@ class NewsItemParse {
 		*/
 		$content = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem)->item(0);
 		
-		if(strcmp($content->nodeValue, "") == 0 || $content === null) {
+		if($content === null) {
 			/*Trying this query if the above query  gives no result.
 			Query path that continues from first query at the start of the document.
 			Path without XML namespace: contentSet/inlineXML/html/body
@@ -413,7 +425,7 @@ class NewsItemParse {
 
 			$content = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:body", $newsItem)->item(0);
 
-			if(strcmp($content->nodeValue, "") == 0 || $content === null) {
+			if($content === null) {
 				
 				/*Trying this query if the above query  gives no result.
 				  Query path that continues from first query at the start of the document.
@@ -421,7 +433,7 @@ class NewsItemParse {
 				*/  
 				$content = $xpath->query($ns."contentSet/".$ns."inlineXML/nitf:nitf/nitf:body/nitf:body.content", $newsItem)->item(0);
 				
-				if(strcmp($content->nodeValue, "") == 0 || $content === null) {
+				if($content === null) {
 				
 					/*Trying this query if the above query  gives no result.
 					  Query path that continues from first query at the start of the document.
@@ -430,7 +442,7 @@ class NewsItemParse {
 					
 					$content = $xpath->query($ns."contentSet/".$ns."inlineData", $newsItem)->item(0);
 					
-					if(strcmp($content->nodeValue, "") == 0 || $content === null) {
+					if($content === null) {
 						return null;
 					}
 				}
@@ -458,16 +470,16 @@ class NewsItemParse {
 		  Path without XML namespace: contentMeta/headline
 		*/
 		$headline = $xpath->query($ns."contentMeta/".$ns."headline", $newsItem)->item(0)->nodeValue;
-		
-		if(strcmp($headline, "") == 0 || $headline == null) {
-		
+
+		if( $headline == null) {
+
 			/*Trying this query if the above query  gives no result
 			  Query path that continues from first query at the start of the document.
 			  Path without XML namespace: contentSet/inlineXML/html/head/title
 			*/  
 			$headline = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:head/html:title", $newsItem)->item(0)->nodeValue;
 			
-			if(strcmp($headline, "") == 0 || $headline == null) {
+			if( $headline == null) {
 				
 				/*Trying this query if the above query  gives no result
 				  Query path that continues from first query at the start of the document.
@@ -475,9 +487,7 @@ class NewsItemParse {
 				*/  
 				$headline = $xpath->query($ns."contentSet/".$ns."inlineXML/nitf:nitf//nitf:body/nitf:body.head/nitf:hedline", $newsItem)->item(0)->nodeValue;
 				
-				if(strcmp($headline, "") == 0 || $headline == null) {
-					return null;
-				}
+				return $headline;
 			}
 		}
 		
@@ -775,14 +785,14 @@ class NewsItemParse {
 		$userName = $xpath->query($ns."name", $cTag)->item(0)->nodeValue;
 		
 		//If noe name tag is present, enter this part of the code
-		if(strcmp($userName, "") == 0 || $userName === null) {
+		if($userName === null) {
 		
 			/*Query path that continues from the query in function getCreator/getContributor
 			  Path without XML namespace: literal-attribute
 			*/
 			$userName  = $xpath->query("@literal", $cTag)->item(0)->nodeValue;
 			
-			if($strcmp($userName, "") == 0 || $userName === null) {
+			if($$userName === null) {
 				return null;
 			}
 		}
@@ -1241,13 +1251,13 @@ class NewsItemParse {
 	private static function setStatusCode($returnArray, $newsItemArray) {
 		if($returnArray['status_code'] != 200) {
 			return $returnArray['status_code'];
-		} elseif($newsItemArray['post']['post_content'] === null) { //Checking if the content is missing);
+		} elseif($newsItemArray['post']['post_content'] == null) { //Checking if the content is missing);
 			return 400;
-		} elseif($newsItemArray['post']['post_title'] === null) { //Checking if the headline is missing
+		} elseif($newsItemArray['post']['post_title'] == null) { //Checking if the headline is missing
 			return 400;
-		} elseif($newsItemArray['meta']['nml2_guid'] === null) {  //Checking if the guid is missing
+		} elseif($newsItemArray['meta']['nml2_guid'] == null) {  //Checking if the guid is missing
 			return 400;
-		} elseif($newsItemArray['meta']['nml2_version'] === null) { //Checking if the version number is missing
+		} elseif($newsItemArray['meta']['nml2_version'] == null) { //Checking if the version number is missing
 			return 400;
 		} else {
 			return 200;
@@ -1266,23 +1276,45 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function setEbargoState($embargo) {
-		if($embargo === null || strcmp($embargo, "") == 0) {
+		if($embargo == null || strcmp($embargo, "") == 0) {
 			return 'publish';
 		} else {
 			return'future';
 		}
 	}
 	
-	
+	/**
+	 * Find and return the guid of the newsItem containing an image
+	 *
+	 * This method receives a newsItem containing a image. It then finds the guid of the image and uses it to find the group containing the image
+	 * In the end this is used to find the guid of the articel where image is found.
+	 *
+	 * @param DOMNode $newsItem 
+	 * @param DOMXpath $xpath Used to find information in a NewsML-G2 document
+	 * @return string guid of a newsItem, return null if noe 
+	 * @author Petter Lundberg Olsen
+	 */
 	private static function getPhotoTextGuid($newsItem, $xpath) {
 		global $ns;
 		
+		//Finds image guid
 		$pGuid = $xpath->query("@guid", $newsItem)->item(0)->nodeValue;
-
-		$group = $xpath->query("//".$ns."group[./".$ns."itemRef/@residref = '".$pGuid."']")->item(0);
-
-		$itemRef = $xpath->query($ns."itemRef[./".$ns."itemClass/@qcode='ninat:text']", $group)->item(0);
 		
+		if($pGuid == null) {
+			return null;
+		}
+		
+		//Finds group containing the image
+		$group = $xpath->query("//".$ns."group[./".$ns."itemRef/@residref = '".$pGuid."']")->item(0);
+		if($group == null) {
+			return null;
+		}
+		//Finds itemRef of the main article
+		$itemRef = $xpath->query($ns."itemRef[./".$ns."itemClass/@qcode='ninat:text']", $group)->item(0);
+		if($itemRef == null) {
+			return null;
+		}
+		//Finds guid of the main article
 		$tGuid = $residref = $xpath->query("@residref", $itemRef)->item(0)->nodeValue;
 		
 		return $tGuid;
