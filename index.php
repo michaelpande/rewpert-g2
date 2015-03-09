@@ -96,12 +96,14 @@
 	
 	function nml2_get_author_posts(){
 		
+		// NML2_MULTI_AUTHOR SUPPORT:
+		if(isset($_GET['author'])){
+			$ID = $_GET['author'];
+		}else{
+			$ID = get_the_author_ID();
+		}
 		
-		ob_start();
-		the_author_meta('ID');
-		$ID = ob_get_contents();
-		ob_end_clean();
-		
+
 		$author = get_posts(array(
 		
 		'post_status' => 'publish',
@@ -111,33 +113,33 @@
 		
 	
 		));
+		
 		$meta_author = get_posts(array(
 			
 			'post_status' => 'publish',
 			'post_type' => 'post',
-			'relation' => 'OR',
+			'relation' => 'AND',
 			
-			'meta_query' => array(
-									'relation' => 'OR',
-									array(
-										'key'     => 'nml2_multiple_authors',
-										'value'   => $ID,
-										'compare' => 'LIKE'
-									)
+			'meta_key'     => 'nml2_multiple_authors',
+			'meta_value'   => $ID,
+			'meta_compare' => 'LIKE'
+		
+	
 								
-								)
 			
 			
 		
 			));
-
 			
 		$mergedposts = array_merge($meta_author, $author);
 		
 
 		$postids = array();
+
 		foreach( $mergedposts as $item ) {
-			$postids[]=$item->ID;
+			
+				$postids[]=$item->ID;
+			
 		}
 		
 		$uniqueposts = array_unique($postids);

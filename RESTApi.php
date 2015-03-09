@@ -320,7 +320,8 @@
 						$new_url = "src=\"". getPathToPluginDir() .$imgUrl."\"";
 						if($firstUrl == null){
 							$firstUrl = getPathToPluginDir() .$imgUrl;
-							$new_url = "";
+			
+							$post['post_content'] =  preg_replace('/(<img[^>]+>)/i','',$post['post_content'],1); 
 						}
 						
 						
