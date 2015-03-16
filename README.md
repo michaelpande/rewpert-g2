@@ -1,11 +1,9 @@
-### What does it do? ###
+# What does it do? #
 
-This plugin allows you to send NewsML-G2 XML via HTTP POST Requests to WordPress.
+This is a WordPress Plugin that makes it possible to send NewsML-G2 XML via HTTP POST Requests to WordPress.
 
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+
 
 # How to use #
 
@@ -33,4 +31,4 @@ SQLite PDO
 
 ### Contribution guidelines ###
 
-* There are no contribution guidelines yet * 
+* There are no contribution guidelines yet *
