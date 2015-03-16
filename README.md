@@ -4,13 +4,13 @@ This is a WordPress Plugin that makes it possible to send NewsML-G2 XML via HTTP
 
 
 # Documentation #
-http://demo-nmlg2wp.rhcloud.com/documentation.php
+[Documentation](http://demo-nmlg2wp.rhcloud.com/documentation.php)
 
 # Official site #
-http://demo-nmlg2wp.rhcloud.com/
+[Official site](http://demo-nmlg2wp.rhcloud.com/)
 
 # Demo #
-http://demo-nmlg2wp.rhcloud.com/wp
+[Demo](http://demo-nmlg2wp.rhcloud.com/wp)
 
 
 # How to use #
