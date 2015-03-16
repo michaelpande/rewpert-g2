@@ -6,6 +6,7 @@ This plugin allows you to send NewsML-G2 XML via HTTP POST Requests to WordPress
 * Quick summary
 * Version
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+
 # How to use #
 
 1. Install WordPress
@@ -18,15 +19,18 @@ This plugin allows you to send NewsML-G2 XML via HTTP POST Requests to WordPress
 
 ### Dependencies  ###
 
-PHP >= 5.4
+PHP >= 5.4 
 SQLite PDO
 
-### Contribution guidelines ###
 
-* There are no contribution guidelines yet * 
 
 ### Contact ###
 
 **Michael Pande** michaepande@gmail.com
 **Petter Lundberg** Olsen petterl93@hotmail.com
 ** Diego A. Pasten Bahamondes** diego.pasten@gmail.com
+
+
+### Contribution guidelines ###
+
+* There are no contribution guidelines yet * 
