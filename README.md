@@ -31,6 +31,5 @@ SQLite PDO
 ### Contact ###
 
 **Michael Pande** michaepande@gmail.com                     
-**Petter Lundberg** Olsen petterl93@hotmail.com                   
-** Diego A. Pasten Bahamondes** diego.pasten@gmail.com                 
-
+**Petter Lundberg Olsen** petterl93@hotmail.com                   
+** Diego A. Pasten Bahamondes** diego.pasten@gmail.com
