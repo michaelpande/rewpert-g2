@@ -117,8 +117,8 @@ class NewsItemParse {
 	
 	//A variable holding the namespace of the xml file
 	//Automatic set to empty string and changed if xml has a namespace in its outermost tag
-	private static $ns;
-	private static $addToArray;
+	private static $_ns;
+	private static $_addToArray;
 
 	
 	/**
@@ -132,12 +132,17 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	public static function createPost($file){
-		global $ns;
-		global $addToArray;
-
-		$addToArray = true;
+		global $_ns;
+		global $_addToArray;
+		
+		$_addToArray = true;
 		$doc = new DOMDocument();
 		
+		//Midletidig unit test 
+		//require("newsitemParseTest.php");
+		
+		//newsitemParseTest::newsitemParseTestIntireArrayOk();
+		//Unit test slutt
 		
 		//Checks if $file is raw XML or a XML file and uses the correct load operation
 		if(is_file($file)) {
@@ -160,17 +165,21 @@ class NewsItemParse {
 		//Test to see if $uri if not equal to ""
 		if($uri != null) {
 			$xpath->registerNamespace("docNamespace", $uri);
-			$ns = "docNamespace:";
+			$_ns = "docNamespace:";
 		}
 		
 		/*Query to separate the different newsItems in a newsMessage
 		  This query will find the absolute path (without XML namespaces): newsMessage/itemSet/newsItem
 		*/
-		$newsItemList = $xpath->query("//".$ns."newsItem");
+		$newsItemList = $xpath->query("//".$_ns."newsItem");
 		
 		$returnArray = array( 
 			'status_code' => 200 //int, the status code automatically set to 200
 		);
+		
+		if($newsItemList->length == 0) {
+			$returnArray['status_code'] = 400;
+		}
 
 		//Files the given array for each newsItem
 		foreach($newsItemList as $newsItem) {
@@ -192,13 +201,13 @@ class NewsItemParse {
 			}
 			
 			//Adds the information found in the newsItem to the array that will be sent to the RESTApi
-			if($addToArray) {
+			if($_addToArray) {
 				//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
 				$returnArray['status_code'] = self::setStatusCode($returnArray, $newsItemArray);
 				array_push($returnArray, $newsItemArray);
 				
 			}
-			$addToArray = true;
+			$_addToArray = true;
 				
 		}
 		
@@ -267,14 +276,14 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function createUserArray($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		$users = array( );
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentMeta/creator
 		*/
-		$node = $xpath->query($ns."contentMeta/".$ns."creator", $newsItem)->item(0);
+		$node = $xpath->query($_ns."contentMeta/".$_ns."creator", $newsItem)->item(0);
 		
 		//Creates the creator of the news article
 
@@ -292,7 +301,7 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentMeta/contributor
 		*/
-		$nodelist = $xpath->query($ns."contentMeta/".$ns."contributor", $newsItem);
+		$nodelist = $xpath->query($_ns."contentMeta/".$_ns."contributor", $newsItem);
 		
 		//Create the contributors of the news article
 		foreach($nodelist as $node) {
@@ -321,13 +330,13 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function createSubjectArray($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		$subjects = array( );
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentMeta/subject
 		*/
-		$nodelist = $xpath->query($ns."contentMeta/".$ns."subject", $newsItem);
+		$nodelist = $xpath->query($_ns."contentMeta/".$_ns."subject", $newsItem);
 		
 		//This loop creates an array cantoning information about each subject
 		foreach($nodelist as $node) {
@@ -357,21 +366,21 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function createPhotoArray($newsItem, $xpath, $returnArray) {
-		global $ns;
-		global $addToArray;
+		global $_ns;
+		global $_addToArray;
 		$photos = array( );
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentSet/remoteContent
 		*/
-		$nodelist = $xpath->query($ns."contentSet/".$ns."remoteContent", $newsItem);
+		$nodelist = $xpath->query($_ns."contentSet/".$_ns."remoteContent", $newsItem);
 
 		//This loop creates an array containing information about each photo
 		foreach($nodelist as $node) {
 			$guid = self::getPhotoTextGuid($newsItem, $xpath);
-			
+
 			if($guid == null) {
-				$addToArray = false;
+				$_addToArray = false;
 				return $returnArray;
 			}
 			
@@ -389,7 +398,7 @@ class NewsItemParse {
 					);
 					
 					array_push($returnArray[$i]['photo'], $photo); 
-					$addToArray = false;
+					$_addToArray = false;
 					
 				}
 			}	
@@ -409,13 +418,13 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getPostContent($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		$content = null;
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentSet/inlineXML/html/body/article/div it will only choose the div whit a itemprop attribute = articleBody
 		*/
-		$content = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem)->item(0);
+		$content = $xpath->query($_ns."contentSet/".$_ns."inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem)->item(0);
 		
 		if($content === null) {
 			/*Trying this query if the above query  gives no result.
@@ -423,7 +432,7 @@ class NewsItemParse {
 			Path without XML namespace: contentSet/inlineXML/html/body
 			*/  
 
-			$content = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:body", $newsItem)->item(0);
+			$content = $xpath->query($_ns."contentSet/".$_ns."inlineXML/html:html/html:body", $newsItem)->item(0);
 
 			if($content === null) {
 				
@@ -431,7 +440,7 @@ class NewsItemParse {
 				  Query path that continues from first query at the start of the document.
 				  Path without XML namespace: contentSet/inlineXML/nitf/body/body.content
 				*/  
-				$content = $xpath->query($ns."contentSet/".$ns."inlineXML/nitf:nitf/nitf:body/nitf:body.content", $newsItem)->item(0);
+				$content = $xpath->query($_ns."contentSet/".$_ns."inlineXML/nitf:nitf/nitf:body/nitf:body.content", $newsItem)->item(0);
 				
 				if($content === null) {
 				
@@ -440,7 +449,7 @@ class NewsItemParse {
 					  Path without XML namespace: contentSet/inlineData
 					*/  
 					
-					$content = $xpath->query($ns."contentSet/".$ns."inlineData", $newsItem)->item(0);
+					$content = $xpath->query($_ns."contentSet/".$_ns."inlineData", $newsItem)->item(0);
 					
 					if($content === null) {
 						return null;
@@ -464,12 +473,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getPostHeadline($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentMeta/headline
 		*/
-		$headline = $xpath->query($ns."contentMeta/".$ns."headline", $newsItem)->item(0)->nodeValue;
+		$headline = $xpath->query($_ns."contentMeta/".$_ns."headline", $newsItem)->item(0)->nodeValue;
 
 		if( $headline == null) {
 
@@ -477,7 +486,7 @@ class NewsItemParse {
 			  Query path that continues from first query at the start of the document.
 			  Path without XML namespace: contentSet/inlineXML/html/head/title
 			*/  
-			$headline = $xpath->query($ns."contentSet/".$ns."inlineXML/html:html/html:head/html:title", $newsItem)->item(0)->nodeValue;
+			$headline = $xpath->query($_ns."contentSet/".$_ns."inlineXML/html:html/html:head/html:title", $newsItem)->item(0)->nodeValue;
 			
 			if( $headline == null) {
 				
@@ -485,7 +494,7 @@ class NewsItemParse {
 				  Query path that continues from first query at the start of the document.
 				  Path without XML namespace: contentSet/inlineXML/html/head/title
 				*/  
-				$headline = $xpath->query($ns."contentSet/".$ns."inlineXML/nitf:nitf//nitf:body/nitf:body.head/nitf:hedline", $newsItem)->item(0)->nodeValue;
+				$headline = $xpath->query($_ns."contentSet/".$_ns."inlineXML/nitf:nitf//nitf:body/nitf:body.head/nitf:hedline", $newsItem)->item(0)->nodeValue;
 				
 				return $headline;
 			}
@@ -508,9 +517,9 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function setPostStatus($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
-		$nodelist = $xpath->query($ns."itemMeta/".$ns."pubStatus/@qcode", $newsItem)->item(0)->nodeValue;
+		$nodelist = $xpath->query($_ns."itemMeta/".$_ns."pubStatus/@qcode", $newsItem)->item(0)->nodeValue;
 		
 		if(strcmp($node->nodeValue, "stat:withheld") == 0) {
 			return 'pending';
@@ -532,12 +541,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getPostName($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: contentMeta/slugline
 		*/
-		$name = $xpath->query($ns."contentMeta/".$ns."slugline", $newsItem)->item(0)->nodeValue;
+		$name = $xpath->query($_ns."contentMeta/".$_ns."slugline", $newsItem)->item(0)->nodeValue;
 		
 		return $name;
 	}
@@ -554,13 +563,13 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getPostTags($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		$tags = null;
 		
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: contentMeta/keyword
 		*/
-		$nodelist = $xpath->query($ns."contentMeta/".$ns."keyword", $newsItem);
+		$nodelist = $xpath->query($_ns."contentMeta/".$_ns."keyword", $newsItem);
 		
 		/*Sets the results of the query above on the return variable if any
 		  Result of this loop should lock like: '<keyword>,<keyword>,...'
@@ -631,12 +640,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaFirstCreated($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: itemMeta/firstCreated
 		*/
-		$firstCreated = $xpath->query($ns."itemMeta/".$ns."firstCreated", $newsItem)->item(0)->nodeValue;
+		$firstCreated = $xpath->query($_ns."itemMeta/".$_ns."firstCreated", $newsItem)->item(0)->nodeValue;
 		
 		return $firstCreated;
 	}
@@ -652,12 +661,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaVersionCreated($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: itemMeta/versionCreated
 		*/
-		$versionCreated = $xpath->query($ns."itemMeta/".$ns."versionCreated", $newsItem)->item(0)->nodeValue;
+		$versionCreated = $xpath->query($_ns."itemMeta/".$_ns."versionCreated", $newsItem)->item(0)->nodeValue;
 		
 		return $versionCreated;
 	}
@@ -673,12 +682,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaEmbargo($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: itemMeta/embargoed
 		*/
-		$embargo = $xpath->query($ns."itemMeta/".$ns."embargoed", $newsItem)->item(0)->nodeValue;
+		$embargo = $xpath->query($_ns."itemMeta/".$_ns."embargoed", $newsItem)->item(0)->nodeValue;
 		
 		return $embargo;
 	}
@@ -694,10 +703,10 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */ 
 	private static function getMetaSentDate($xpath) {
-		global $ns;
+		global $_ns;
 		
 		//Path without XML namespace: newsMessage/header/sent
-		$dateSent = $xpath->query("//".$ns."newsMessage/".$ns."header/".$ns."sent")->item(0)->nodeValue;
+		$dateSent = $xpath->query("//".$_ns."newsMessage/".$_ns."header/".$_ns."sent")->item(0)->nodeValue;
 		
 		return $dateSent;
 	}
@@ -713,12 +722,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaLanguage($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: contentMeta/language/tag-attribute
 		*/
-		$language = $xpath->query($ns."contentMeta/".$ns."language/@tag", $newsItem)->item(0)->nodeValue;
+		$language = $xpath->query($_ns."contentMeta/".$_ns."language/@tag", $newsItem)->item(0)->nodeValue;
 		
 		return $language;
 	}
@@ -734,12 +743,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaCopyrightHolder($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: rightsInfo/copyrightHolder/name
 		*/
-		$copyrightHolder = $xpath->query($ns."rightsInfo/".$ns."copyrightHolder/".$ns."name", $newsItem)->item(0)->nodeValue;
+		$copyrightHolder = $xpath->query($_ns."rightsInfo/".$_ns."copyrightHolder/".$_ns."name", $newsItem)->item(0)->nodeValue;
 		
 		return $copyrightHolder;
 	}
@@ -755,13 +764,13 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getMetaCopyrightNotice($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		$copyrightNotice = null;
 		
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: rightsInfo/copyrightNotice
 		*/
-		$copyrightNotice = $xpath->query($ns."rightsInfo/".$ns."copyrightNotice", $newsItem)->item(0)->nodeValue;
+		$copyrightNotice = $xpath->query($_ns."rightsInfo/".$_ns."copyrightNotice", $newsItem)->item(0)->nodeValue;
 		
 		return $copyrightNotice;
 	}
@@ -777,12 +786,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getUserName($cTag, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		/*Query path that continues from the query in function getCreator/getContributor
 		  Path without XML namespace: name
 		*/
-		$userName = $xpath->query($ns."name", $cTag)->item(0)->nodeValue;
+		$userName = $xpath->query($_ns."name", $cTag)->item(0)->nodeValue;
 		
 		//If noe name tag is present, enter this part of the code
 		if($userName === null) {
@@ -833,9 +842,9 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getUserEmail($cTag, $xpath) {
-		global $ns;
+		global $_ns;
 		
-		$email = $xpath->query($ns."personDetails/".$ns."contactInfo/".$ns."email", $cTag)->item(0)->nodeValue;
+		$email = $xpath->query($_ns."personDetails/".$_ns."contactInfo/".$_ns."email", $cTag)->item(0)->nodeValue;
 		
 		return $email;
 	}
@@ -887,13 +896,13 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getSubjectSameAs($subjectTag, $xpath) {
-		global $ns;
+		global $_ns;
 		$sameAsArray = array( );
 		
 		/*This XPath query is a subquery from the query in the method createSubjectArray
 		  Path without XML namespace: sameAs
 		*/
-		$nodelist = $xpath->query($ns."sameAs", $subjectTag);
+		$nodelist = $xpath->query($_ns."sameAs", $subjectTag);
 		
 		//This loop creates an array containing information about each subject
 		foreach($nodelist as $node) {
@@ -921,10 +930,10 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */ 	
 	private static function getSubjectBroader($subjectTag, $xpath) {
-		global $ns;
+		global $_ns;
 		$broaderArray = array( );
 		
-		$nodelist = $xpath->query($ns."broader", $subjectTag);
+		$nodelist = $xpath->query($_ns."broader", $subjectTag);
 
 		foreach($nodelist as $node) {
 			$broader = array(
@@ -973,13 +982,13 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getSubjectName($subjectTag, $xpath) {
-		global $ns;
+		global $_ns;
 		$nameArray = array( );
 		
 		/*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
 		  Path without XML namespace: name
 		*/
-		$nodelist = $xpath->query($ns."name", $subjectTag);
+		$nodelist = $xpath->query($_ns."name", $subjectTag);
 		
 		//This loop creates the name arrays and storing there information
 		foreach($nodelist as $node) {
@@ -1110,8 +1119,8 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: size-attribute
 		*/
-		$size = $xpath->query("@size", $remoteContent)->item(0)->nodeValue3;
-		
+		$size = $xpath->query("@size", $remoteContent)->item(0)->nodeValue;
+
 		return $size;
 	}
 	
@@ -1131,7 +1140,7 @@ class NewsItemParse {
 		  Path without XML namespace: width-attribute
 		*/
 		$width = $xpath->query("@width", $remoteContent)->item(0)->nodeValue;
-		
+
 		return $width;
 	}
 	
@@ -1226,12 +1235,12 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getPhotoDescription($newsItem, $xpath) {
-		global $ns;	
+		global $_ns;	
 		
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: contentMeta/description
 		*/
-		$description = $xpath->query($ns."contentMeta/".$ns."description", $newsItem)->item(0)->nodeValue;
+		$description = $xpath->query($_ns."contentMeta/".$_ns."description", $newsItem)->item(0)->nodeValue;
 		
 		return $description;
 	}
@@ -1276,10 +1285,10 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function setEbargoState($embargo) {
-		if($embargo == null || strcmp($embargo, "") == 0) {
+		if($embargo == null) {
 			return 'publish';
 		} else {
-			return'future';
+			return 'future';
 		}
 	}
 	
@@ -1295,7 +1304,7 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function getPhotoTextGuid($newsItem, $xpath) {
-		global $ns;
+		global $_ns;
 		
 		//Finds image guid
 		$pGuid = $xpath->query("@guid", $newsItem)->item(0)->nodeValue;
@@ -1303,17 +1312,19 @@ class NewsItemParse {
 		if($pGuid == null) {
 			return null;
 		}
-		
+
 		//Finds group containing the image
-		$group = $xpath->query("//".$ns."group[./".$ns."itemRef/@residref = '".$pGuid."']")->item(0);
+		$group = $xpath->query("//".$_ns."group[./".$_ns."itemRef/@residref = '".$pGuid."']")->item(0);
 		if($group == null) {
 			return null;
 		}
+
 		//Finds itemRef of the main article
-		$itemRef = $xpath->query($ns."itemRef[./".$ns."itemClass/@qcode='ninat:text']", $group)->item(0);
+		$itemRef = $xpath->query($_ns."itemRef[./".$_ns."itemClass/@qcode='ninat:text']", $group)->item(0);
 		if($itemRef == null) {
 			return null;
 		}
+		
 		//Finds guid of the main article
 		$tGuid = $residref = $xpath->query("@residref", $itemRef)->item(0)->nodeValue;
 		
@@ -1336,7 +1347,7 @@ class NewsItemParse {
 	 * Answer author:
 	 *  regex - http://stackoverflow.com/users/23869/regex
 	 */
-	private static function get_inner_html( $node ) { 
+	private static function get_inner_html($node) { 
 		$innerHTML= ''; 
 		$children = $node->childNodes; 
 		foreach ($children as $child) { 
@@ -1346,4 +1357,10 @@ class NewsItemParse {
 		return $innerHTML;  
 	}
 	
+	
 }
+
+		
+
+
+?>
