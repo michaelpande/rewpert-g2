@@ -74,11 +74,23 @@
 	
 	
 	
+<<<<<<< HEAD
+=======
+
+	
+>>>>>>> e5404726343556dc908df54fa87339596a36305e
 	
 	// Sends the posted data to the NewsItemParser and if everything went OK it gets a multidimensional array in return of values.
+	
+	// CHECK IF CONTAINS KNOWLEDGEITEM
+	$qcodes = QCodes::update($postdata);
+	debug("<h3>Returned from KnowledgeItemParser.php: </h3>");
+	debug($qcodes);
+	// CHECK IF CONTAINS NewsItem
 	$parsed = newsItemParse::createPost($postdata);
 	
 	
+
 	
 	// Show what was returned from NewsItemParse 
 	debug("<h3>Returned from NewsItemParse.php: </h3>");
@@ -89,7 +101,15 @@
 	
 	// Checks if something went wrong during parsing
 	if($parsed['status_code'] != 200){
-		setHeader($parsed['status_code']);
+		
+		if($qcodes){
+			debug("KnowledgeItem was imported, set http header 201");
+			setHeader(201);
+		}else{
+			debug("Did not contain KnowledgeItem, so use http header from NewsItemParser");
+			setHeader($parsed['status_code']);
+		}
+		
 		exit;
 	}
 	
@@ -334,9 +354,11 @@
 						debug("Pattern: " . $pattern);
 						
 						$new_url = "src=\"". getPathToPluginDir() .$imgUrl."\"";
+						
+						// Replace 
 						if($firstUrl == null){
 							$firstUrl = getPathToPluginDir() .$imgUrl;
-			
+							// Remove first img tag. 	
 							$post['post_content'] =  preg_replace('/(<img[^>]+>)/i','',$post['post_content'],1); 
 						}
 						

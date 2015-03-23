@@ -2,11 +2,21 @@
 
 // Simply looks KnowledgeItems for concepts with all the necessary data to store an item in the database.
 
-
-
-
+/**
+* This is a parser class that partially parses NewsML-G2 KnowledgeItems, the test only tests some files gotten from the IPTC CV of subjects and mediatopics.
+* Every concept it finds will be added to an array that will be returned. 
+* Test it with KnowledgeItem::test();
+* @author Michael Pande
+*/
 class KnowledgeItemParse {
 	
+	
+	
+		/**
+		 * Tests the retrieval of qcodes from KnowledgeItems
+		 * 
+		 * @author Michael Pande
+		 */
 		public static function test(){
 			
 			var_dump(KnowledgeItemParse::getQCodes("KnowledgeItem/test_subjectcode.xml"));
@@ -16,7 +26,14 @@ class KnowledgeItemParse {
 		
 		
 		}
-		// Accepts a NewsML-G2 KnowledgeItem and retrieves qcodes and corresponding strings. 
+
+		/**
+		 *  Accepts a NewsML-G2 KnowledgeItem and retrieves the concepts & qcodes. 
+		 * 
+		 * @return Array of concepts & qcodes or null
+		 *
+		 * @author Michael Pande
+		 */
 		public static function getQCodes($file){
 			
 			$doc = KnowledgeItemParse::getDocument($file);
@@ -25,6 +42,8 @@ class KnowledgeItemParse {
 			}
 			$xpath = new DOMXPath($doc);
 			
+			
+		
 			// XML register namespaces
 			$xpath->registerNamespace('html', "http://www.w3.org/1999/xhtml");
 			$xpath->registerNamespace('knowledgeItem', "http://iptc.org/std/nar/2006-10-01/");
@@ -35,7 +54,13 @@ class KnowledgeItemParse {
 		}
 	
 		
-		
+		/**
+		 * Accepts a DomXPATH object from a NewsML-G2 KnowledgeItem and retrieves the concepts & qcodes. 
+		 * 
+		 * @return Array of concepts & qcodes
+		 *
+		 * @author Michael Pande
+		 */
 		private static function getSubjects($xpath) {
 			
 			$subjects = array();
@@ -45,8 +70,8 @@ class KnowledgeItemParse {
 			$subjectMedtop;
 			$nodelist = $xpath->query("//knowledgeItem:concept");
 			
-	
 			foreach($nodelist as $node) {
+			
 				$subjectName = null;
 				$subjectDescription = null;
 				$qcode = null;
@@ -126,7 +151,13 @@ class KnowledgeItemParse {
 	
 	
 	
-		
+	/**
+	 *  Checks if URL to file exists  
+	 * 
+	 * @return boolean
+	 *
+	 * @author Michael Pande
+	 */
 	private static function urlExist($url){
 		$file_headers = @get_headers($url);
 		if($file_headers[0] == 'HTTP/1.1 404 Not Found') {
@@ -138,21 +169,25 @@ class KnowledgeItemParse {
 	}
 	
 	
-	
+	/**
+	 * Gets document either from file or from URL
+	 * 
+	 * @return DOMDocument
+	 *
+	 * @author Michael Pande
+	 */
 	private static function getDocument($file){
 		
 		$doc = new DOMDocument();
 		
-		// Check if file exists
-		if(file_exists($file) || KnowledgeItemParse::urlExist($file)){
-			echo "File/URL exists";
+		
+		//Checks if $file is file or text
+		if(is_file($file)) {
 			$doc->load($file);
-		}elseif(is_string($file) && (new XMLReader($file))->isValid()){
-			echo "File/URL does not exist";
+		}
+		else {
 			$doc->loadXML($file);
-		}else{
-			echo "File/URL does not exist and string is not valid XML";
-			return null;
+		
 		}
 		return $doc;
 	}

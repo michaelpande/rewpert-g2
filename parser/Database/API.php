@@ -175,7 +175,7 @@
 			
 				try{
 					$db = $this->createDB();
-					echo ("<br>execute() - EXECUTE<br>");
+					
 					
 					if($preparedInsert != null){
 						$preparedInsert = substr_replace($preparedInsert,";",strlen($preparedInsert)-1);
@@ -248,7 +248,7 @@
 				$db = $this->createDB();
 				$result = $db->query("SELECT * FROM SimpleStorage WHERE key1 LIKE '$key1' AND key2 LIKE '$key2'");
 				if($result == null){
-					echo "<br>$key1, $key2 returns null";
+					
 					return null;
 				}
 				foreach($result as $row)
