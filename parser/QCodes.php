@@ -5,7 +5,7 @@
 require_once('Database/API.php');
 require_once('KnowledgeItem/KnowledgeItem.php');
 
-//QCodes::test(); (Testing method)
+//QCodes::test(); //(Testing method)
 
 
 /**
@@ -24,10 +24,9 @@ class QCodes{
 	public static function test(){
 		
 	
-		QCodes::update("KnowledgeItem/test_scene_de.xml");
+		
 		QCodes::update("KnowledgeItem/test_subjectcode-en.xml");
 		QCodes::update("KnowledgeItem/test_mediatopic.xml");
-		QCodes::update("KnowledgeItem/test_scene.xml");
 		//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB"); // Max 10/hour 
 		
 	
@@ -71,6 +70,9 @@ class QCodes{
 		
 		$subjects = KnowledgeItemParse::getQCodes($file);
 
+		if($subjects == null){
+			return false;
+		}
 		// Updates DB with the new QCodes. 
 		$db = new SimpleStorage();
 
@@ -83,15 +85,13 @@ class QCodes{
 		$db->execute();
 		
 		
-		echo "<br><br>----CONTENTS----<br><br>";
 		foreach($subjects as $value){
 			$var = $db->get($value['qcode'],$value['lang']);
-			var_dump(unserialize($var));
-			
+			//var_dump(unserialize($var));
 		}
 		
 		
-		
+		return true;
 		
 		
 		
