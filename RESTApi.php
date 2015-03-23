@@ -34,19 +34,15 @@
 	if(isset($_GET["update_override"]) && $_GET["update_override"] == true){
 		$UPDATE_OVERRIDE = true;
 	}
-	require('parser/newsItemParse.php'); 	// Parses NewsML-G2 NewsItems 
-	require('parser/DateParser.php'); 		// Parses Date strings
-	require('parser/errorLogger.php'); 		// Logs errors
-	require('../../../wp-load.php'); 		// Potentially creates bugs. Necessary to access methods in the wordpress core from outside.
-	require('parser/QCodes.php'); 			// Handles storage and retrieval of QCodes and their values. 
+	require('parser/newsItemParse.php'); 	  // Parses NewsML-G2 NewsItems 
+	require('parser/DateParser.php'); 		  // Parses Date strings
+	require('parser/errorLogger.php'); 		  // Logs errors
+	require('../../../wp-load.php'); 		  // Potentially creates bugs. Necessary to access methods in the wordpress core from outside.
+	require('parser/QCodes.php'); 			  // Handles storage and retrieval of QCodes and their values. 
+	require('unit_test/unitTestManager.php'); //Performs unit tests
 	
-
-	
-	
-
-	
-	
-	
+	//Comment out the line below to stop unit testing
+	unitTestManager::performUnitTest();
 
 	
 	// Authentication, returns 401 if wrong API key
@@ -75,6 +71,7 @@
 	
 	 // Gets parameters from the HTTP REQUEST
 	$postdata = getRequestParams();
+	
 	
 	
 	

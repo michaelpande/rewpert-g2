@@ -136,13 +136,8 @@ class NewsItemParse {
 		global $_addToArray;
 		
 		$_addToArray = true;
+		$_ns = "";
 		$doc = new DOMDocument();
-		
-		//Midletidig unit test 
-		//require("newsitemParseTest.php");
-		
-		//newsitemParseTest::newsitemParseTestIntireArrayOk();
-		//Unit test slutt
 		
 		//Checks if $file is raw XML or a XML file and uses the correct load operation
 		if(is_file($file)) {
@@ -161,12 +156,12 @@ class NewsItemParse {
 		//XML namescpaces
         $xpath->registerNamespace('html', "http://www.w3.org/1999/xhtml");
 		$xpath->registerNamespace('nitf', "http://iptc.org/std/NITF/2006-10-18/");
-		
+
 		//Test to see if $uri if not equal to ""
 		if($uri != null) {
 			$xpath->registerNamespace("docNamespace", $uri);
 			$_ns = "docNamespace:";
-		}
+		} 
 		
 		/*Query to separate the different newsItems in a newsMessage
 		  This query will find the absolute path (without XML namespaces): newsMessage/itemSet/newsItem
@@ -309,7 +304,7 @@ class NewsItemParse {
 				'user_login' 	=> self::getUserName($node, $xpath), //string login_name of the user
 				'description'	=> self::getUserDescription($node, $xpath), //string, describing the role of the user
 				'user_email'	=> self::getUserEmail($node, $xpath), //string, the email of the user 
-				'nml2_qude'		=> self::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
+				'nml2_qcode'	=> self::getUserQcode($node, $xpath), //string, the users NewsML-G2 qcode
 				'nml2_uri'		=> self::getUserUri($node, $xpath) //string, the users NewsML-G2 uri
 			);
 			
@@ -378,7 +373,7 @@ class NewsItemParse {
 		//This loop creates an array containing information about each photo
 		foreach($nodelist as $node) {
 			$guid = self::getPhotoTextGuid($newsItem, $xpath);
-
+			
 			if($guid == null) {
 				$_addToArray = false;
 				return $returnArray;
