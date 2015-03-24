@@ -34,6 +34,10 @@
 	if(isset($_GET["update_override"]) && $_GET["update_override"] == true){
 		$UPDATE_OVERRIDE = true;
 	}
+	
+	if(isset($_GET["manual"]) && $_GET["manual"] == true){
+		$MANUAL_UPLOAD = true;
+	}
 	require('parser/newsItemParse.php'); 	  // Parses NewsML-G2 NewsItems 
 	require('parser/DateParser.php'); 		  // Parses Date strings
 	require('parser/errorLogger.php'); 		  // Logs errors
@@ -42,7 +46,7 @@
 	require('unit_test/unitTestManager.php'); //Performs unit tests
 	
 	//Comment out the line below to stop unit testing
-	unitTestManager::performUnitTest();
+//	unitTestManager::performUnitTest();
 
 	
 	// Authentication, returns 401 if wrong API key
@@ -51,7 +55,7 @@
 	if(!authentication()){
 		debug("Failed");
 		setHeader(401); // Unauthorized
-		exit;
+		exitApi();
 	}
 	debug("Successful");
 	
@@ -63,7 +67,7 @@
 	if($_SERVER['REQUEST_METHOD'] != 'POST'){
 		debug("The REQUEST_METHOD was not POST");
 		setHeader(400); // Bad Request
-		exit;
+		exitApi();
 	}
 
 	
@@ -72,13 +76,11 @@
 	 // Gets parameters from the HTTP REQUEST
 	$postdata = getRequestParams();
 	
-	
-	
-<<<<<<< HEAD
-=======
 
-	
->>>>>>> e5404726343556dc908df54fa87339596a36305e
+	$file = fileUpload();
+	if($file != null){
+		$postdata = $file;
+	}
 	
 	// Sends the posted data to the NewsItemParser and if everything went OK it gets a multidimensional array in return of values.
 	
@@ -110,7 +112,7 @@
 			setHeader($parsed['status_code']);
 		}
 		
-		exit;
+		exitApi();
 	}
 	
 	
@@ -148,7 +150,7 @@
 	}
 	
 	
-	
+	exitAPI();
 			
 
 			
@@ -313,19 +315,12 @@
 	
 	/**
 	 * Inserts:
-	 *    NewsItem (post), 
-	 * 	  NMLG2 meta data, 
-	 *    Keywords(tags), 
-	 *    Subjects(categories),
-	 *    Creators / Contributors (authors) 
+	 *    PHOTOS
 	 * 	into WordPress 
 	 *
 	 * @param $post - A WP_Post object (array of values)
-	 * @param $meta - An array of metadata 
-	 * @param $subjects - A multidimensional array of subjects containing qcodes, names and misc metadata
-	 * @param $authors - A multidimensional array of users. 
+	 * @param $post_id - The ID of the post 
 	 * @param $photos - A multidimensional array of photos. 
-	 * @return $result - After attempting to create a WP post this result is created.
 	 * @author Michael Pande
 	 */
 	function insertPhotos($post_id, $post, $photos){
@@ -608,7 +603,7 @@
 		if($event != null){
 			if($event != 200 && $event != 201){
 				errorLogger::headerStatus($event); 
-				exit;
+				exitApi();
 			}
 			errorLogger::headerStatus($event); 
 			
@@ -652,7 +647,7 @@
 	 */
 	function setAuthors($authors, $post_id){
 		debug("<strong>Set authors</strong>");
-		debug(var_dump($authors));          
+		debug($authors);          
 
 		$author_meta = "";
 		
@@ -667,7 +662,8 @@
 		}
 		
 		$result = update_post_meta($post_id, "nml2_multiple_authors", $author_meta);
-		debug("Result " . var_dump($result));
+		debug("Result " );
+		debug($result);
 		
 	}
 	
@@ -707,10 +703,34 @@
 	
 	
 	
-	
-	
+	/**
+	 * Gets content from uploaded file
+	 * @return File contents
+	 *
+	 * @author Michael Pande
+	 */
+	function fileUpload(){
+		return file_get_contents($_FILES["uploaded_file"]["tmp_name"]);	
+	}
 
 
+	/**
+	 * Simply exits the API, and prevents showing output if debug isn't true 
+	 *
+	 * @author Michael Pande
+	 */
+	function exitApi(){
+		global $DEBUG, $MANUAL_UPLOAD;
+		
+		
+		if(!$DEBUG){
+			ob_clean();
+		}
+		if($MANUAL_UPLOAD){
+			die("File successfully uploaded " . '<br><a href="'.$_SERVER['HTTP_REFERER'].'">Back</a>');
+		}
+		exit;
+	}
 
 
 	/**

@@ -36,6 +36,7 @@ class KnowledgeItemParse {
 		 */
 		public static function getQCodes($file){
 			
+			
 			$doc = KnowledgeItemParse::getDocument($file);
 			if($doc == null){
 				return null;

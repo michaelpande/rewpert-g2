@@ -41,7 +41,6 @@
 
 
 
-
 <!-- Import file -->
 
     
@@ -67,32 +66,23 @@
 		<input type="submit"  value="Create new API key and update the URL" />
 
 	</form><br><br>
-	<h2>QCodes, (Subjects, Mediatopics)</h2>
-	<p><strong>IPTC CV Subjects: </strong>http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB</p>
-	<p><strong>IPTC CV Mediatopics: </strong>http://cv.iptc.org/newscodes/mediatopic?format=g2ki&lang=en-GB</p>
-	<form action="" method="post" style="display:inline-block">
-		<input type="hidden" name="NewKey" value="true" /><br>
-		<input type="text" value="http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB" />
-		<input type="submit"  value="Update QCodes" /><br>
-		
-
-	</form>
-		<form action="" method="post" style="display:inline-block">
-		<input type="hidden" name="DeleteQCodes" value="true" /><br>
-		<input type="submit"  value="Delete all QCodes" /><br>
-		
-
-	</form>
-		
-		
-		
-		
-		<br><br>
 	
-	<br><br>
 	
 	<div class="nml2-container">
-	<h2>Quick reference</h2>
+	<h2>Manual Upload</h2>
+	<p><strong>Supports: </strong>NewsItems & KnowledgeItems</p>
+		<p><strong>IPTC CV Subjects: </strong>http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB (Max 10/day)</p>
+	<p><strong>IPTC CV Mediatopics: </strong>http://cv.iptc.org/newscodes/mediatopic?format=g2ki&lang=en-GB (Max 10/day)</p>
+	<form id="manual" action='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>&manual=true' enctype="multipart/form-data" method="post">
+		
+		<input type="file" name="uploaded_file" id="uploaded_file" ><br><br>
+		<input type="submit" id="startImport" value="Start import" name="submit" >
+	</form><br><br>
+	<div id="response">
+	</div>
+
+
+<h2>Quick reference</h2>
 		<div class="nml2-right">
 			<h4>Documentation</h4>
 			<a href="<?php echo getPathToPluginDir();?>docu">Documentation</a><br>
@@ -107,7 +97,7 @@
 			
 		</div>
 	</div>
-	<br><br>
+	<br><br>	
 	<h2>Security</h2>
 	<ul class="indent">
 		<li>The API key will be <strong>hidden when using SSL</strong></li>
@@ -127,26 +117,9 @@
 	
 	
 	
-<!--	
 	<br><br><br><br>
 	
-	<h2>Select NewsML-G2 File</h2>
-<?php echo '<input type="file" name="files[]" id="importedFile"  enctype="multipart/form-data"  data-url="'.getPathToPluginDir().'/lib/jQuery-File-Upload/server/php"  multiple><br><br>' ?>
-    <div id="selectedFiles">
-		<table id="selectedFiles">
 
-		</table>
-	</div>
-	
-	
-	
-	
-
-
-    <input type="submit" id="startImport" value="Start importing" name="submit" >
-</form>
-
--->
 
 
 
