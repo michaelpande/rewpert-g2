@@ -36,7 +36,7 @@ class QCodes{
 	public static function getSubject($qcode, $lang){
 		$lang = ($lang == null) ? "" : $lang; // Guarantees a set value.
 		$qcode = ($qcode == null) ? "" : $qcode; // Guarantees a set value.
-		echo "<br>getSubject($qcode , $lang);<br>";
+
 		$db = new SimpleStorage();
 		return unserialize($db->get($qcode,$lang));
 
@@ -87,7 +87,6 @@ class QCodes{
 		
 		foreach($subjects as $value){
 			$var = $db->get($value['qcode'],$value['lang']);
-			//var_dump(unserialize($var));
 		}
 		
 		

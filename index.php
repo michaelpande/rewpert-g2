@@ -171,7 +171,7 @@
 		
 
 		//wp_enqueue_script('ajaxcomm', getPathToPluginDir() . '/js/ajaxcomm.js',null,null);
-        wp_enqueue_script('newsmlg2script', getPathToPluginDir() . '/js/newsmlg2.js',null,null);
+        //wp_enqueue_script('newsmlg2script', getPathToPluginDir() . '/js/newsmlg2.js',null,null);
 
 
 
