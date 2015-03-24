@@ -1334,13 +1334,7 @@ class NewsItemParse {
 	 * @param DOMNode $node
 	 *
 	 * Attribution:
-	 * This method in gathered from a Stack Overflow when trying to solve a problem whit DOMNode stripping HTML tags
-	 * Link to question: http://stackoverflow.com/questions/6286362/php-dom-get-nodevalue-html-without-stripping-tags
-	 * Question authors:
-	 *	Marty - http://stackoverflow.com/users/786758/marty
-	 *  GetFree - http://stackoverflow.com/users/25700/getfree
-	 * Answer author:
-	 *  regex - http://stackoverflow.com/users/23869/regex
+	 * From php manual coment 101243, http://php.net/manual/en/class.domelement.php#101243
 	 */
 	private static function get_inner_html($node) { 
 		$innerHTML= ''; 
