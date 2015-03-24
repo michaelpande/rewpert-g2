@@ -5,19 +5,19 @@ class newsitemParseTest {
 	public static function runAllTests() {
 		$successful = 0;
 		
-		if(self::newsitemParseTestIntireArrayOk()) {
-			$successful++;
-		}
-		if(self::pubStatusPublish()) {
-			$successful++;
-		}
+		if(self::newsitemParseTestIntireArrayOk()) $successful++;
+		if(self::pubStatusPublish()) $successful++;
+		if(self::contentMissingTest()) $successful++;
+		if(self::headlineMissingTest()) $successful++;
+		if(self::guidMissingTest()) $successful++;
+		if(self::versionMissingTest()) $successful++;
 		
 		return $successful;
 	}
 	
-	public static function newsitemParseTestIntireArrayOk() {
+	private static function newsitemParseTestIntireArrayOk() {
 		//Arrange
-		echo "<h3>Running newsitemParseTestIntireArrayOk</h3>";
+		echo "<h4>Running newsitemParseTestIntireArrayOk</h4>";
 		//require("newsitemParse.php");
 		
 		$xmlComplete = '<newsMessage xmlns="http://iptc.org/std/nar/2006-10-01/">
@@ -431,9 +431,10 @@ class newsitemParseTest {
 		return $success;
 	}
 	
-	public static function pubStatusPublish() {
+	private static function pubStatusPublish() {
 		//Arrange
-		echo "<h3>Running pubStatusPublish</h3>";
+		echo "<h4>Running pubStatusPublish</h4>";
+		
 		$xml = '<newsItem guid="guid" version="1">
 						
 					</newsItem>';
@@ -453,6 +454,141 @@ class newsitemParseTest {
 		
 		var_dump($success);
 		return $success;
+	}
+	
+	private static function contentMissingTest() {
+		//Arrange
+		echo "<h4>Running contentMissingTest</h4>";
+		
+		$xml = '<newsItem>
+				</newsItem>';
+				
+		$status_codeCorrect = 400;
+		
+		//Act
+		$parseArray = newsitemParse::createPost($xml);
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray['status_code'] != $status_codeCorrect) {
+			echo "Test one failed: " . $parseArray['status_code'] . " != " . $status_codeCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
+	}
+	
+	private static function headlineMissingTest() {
+		//Arrange
+		echo "<h4>Running headlineMissingTest</h4>";
+		
+		$xml = '<newsItem>
+					<contentSet>
+						<inlineXML contenttype="application/xhtml+xml">
+							<html xmlns="http://www.w3.org/1999/xhtml">
+								<body>
+									<article>
+										<div itemprop="articleBody"><p>Article content</p></div>
+									</article>
+								</body>
+							</html>
+						</inlineXML>
+					</contentSet>
+				</newsItem>';
+		
+		$status_codeCorrect = 400;
+		
+		//Act
+		$parseArray = newsitemParse::createPost($xml);
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray['status_code'] != $status_codeCorrect) {
+			echo "Test one failed: " . $parseArray['status_code'] . " != " . $status_codeCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
+	}
+	
+	private static function guidMissingTest() {
+		//Arrange
+		echo "<h4>Running guidMissingTest</h4>";
+		
+		$xml = '<newsItem>
+					<contentMeta>
+						<headline>
+							Headline
+						</headline>
+					</contentMeta>
+					<contentSet>
+						<inlineXML contenttype="application/xhtml+xml">
+							<html xmlns="http://www.w3.org/1999/xhtml">
+								<body>
+									<article>
+										<div itemprop="articleBody"><p>Article content</p></div>
+									</article>
+								</body>
+							</html>
+						</inlineXML>
+					</contentSet>
+				</newsItem>';
+		
+		$status_codeCorrect = 400;
+		
+		//Act
+		$parseArray = newsitemParse::createPost($xml);
+		
+		//Assert
+		$success = true;
+		
+		var_dump($success);
+		return $success;
+	}
+	
+	private static function versionMissingTest() {
+		//Arrange
+		echo "<h4>Running versiondMissingTest</h4>";
+		
+		$xml = '<newsItem guid="guid">
+					<contentMeta>
+						<headline>
+							Headline
+						</headline>
+					</contentMeta>
+					<contentSet>
+						<inlineXML contenttype="application/xhtml+xml">
+							<html xmlns="http://www.w3.org/1999/xhtml">
+								<body>
+									<article>
+										<div itemprop="articleBody"><p>Article content</p></div>
+									</article>
+								</body>
+							</html>
+						</inlineXML>
+					</contentSet>
+				</newsItem>';
+		
+		$status_codeCorrect = 400;
+		
+		//Act
+		$parseArray = newsitemParse::createPost($xml);
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray['status_code'] != $status_codeCorrect) {
+			echo "Test one failed: " . $parseArray['status_code'] . " != " . $status_codeCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
+		
 	}
 }
 
