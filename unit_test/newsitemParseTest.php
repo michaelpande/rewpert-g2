@@ -11,6 +11,11 @@ class newsitemParseTest {
 		if(self::headlineMissingTest()) $successful++;
 		if(self::guidMissingTest()) $successful++;
 		if(self::versionMissingTest()) $successful++;
+		if(self::contentAnternate1Test()) $successful++;
+		if(self::contentAnternate2Test()) $successful++;
+		if(self::contentAnternate3Test()) $successful++;
+		if(self::headlineAlternate1Test()) $successful++;
+		if(self::headlineAlternate2Test()) $successful++;
 		
 		return $successful;
 	}
@@ -59,8 +64,7 @@ class newsitemParseTest {
 														</contactInfo>
 													</personDetails>
 											</creator>
-											<contributor role="contributor:role" qcode="contributor:qcode" uri="contributor:uri">
-												<name>Contributor</name>
+											<contributor role="contributor:role" qcode="contributor:qcode" uri="contributor:uri" literal="Contributor">
 													<personDetails>
 														<contactInfo>
 															<email>contributor@email.com</email>
@@ -167,7 +171,13 @@ class newsitemParseTest {
 		$imagedescriptionCorrect = "Image description";
 		
 		//Act
-		$parseArray = newsitemParse::createPost($xmlComplete);
+		try {
+			$parseArray = newsitemParse::createPost($xmlComplete);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
+		
 		
 		//Assert
 		$success = true;
@@ -442,7 +452,11 @@ class newsitemParseTest {
 		$pubStatusCorrect = 'publish';
 		
 		//Act
-		$parseArray = newsitemParse::createPost($xml);
+		try{
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
 		
 		//Assert
 		$success = true;
@@ -466,7 +480,12 @@ class newsitemParseTest {
 		$status_codeCorrect = 400;
 		
 		//Act
-		$parseArray = newsitemParse::createPost($xml);
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
 		
 		//Assert
 		$success = true;
@@ -501,7 +520,11 @@ class newsitemParseTest {
 		$status_codeCorrect = 400;
 		
 		//Act
-		$parseArray = newsitemParse::createPost($xml);
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
 		
 		//Assert
 		$success = true;
@@ -541,7 +564,12 @@ class newsitemParseTest {
 		$status_codeCorrect = 400;
 		
 		//Act
-		$parseArray = newsitemParse::createPost($xml);
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
 		
 		//Assert
 		$success = true;
@@ -576,7 +604,12 @@ class newsitemParseTest {
 		$status_codeCorrect = 400;
 		
 		//Act
-		$parseArray = newsitemParse::createPost($xml);
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
 		
 		//Assert
 		$success = true;
@@ -588,9 +621,186 @@ class newsitemParseTest {
 		
 		var_dump($success);
 		return $success;
+	}
+	
+	private static function contentAnternate1Test() {
+		//Arrange
+		echo "<h4>Running contentAnternate1Test</h4>";
+		
+		$xml = '<newsItem>
+					<contentSet>
+						<inlineXML>
+							<html xmlns="http://www.w3.org/1999/xhtml">
+								<body>Content</body>
+							</html>
+						</inlineXML>
+					</contentSet>
+				</newsItem>';
+		
+		$post_contentCorrect = "Content";
+		
+		//Act
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray[0]['post']['post_content'] != $post_contentCorrect) {
+			echo "Test one failed: " . $parseArray[0]['post']['post_content'] . " != " . $post_contentCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
 		
 	}
+	
+	private static function contentAnternate2Test() {
+		//Arrange
+		echo "<h4>Running contentAnternate2Test</h4>";
+		
+		$xml = '<newsItem>
+					<contentSet>
+						<inlineXML>
+							<nitf xmlns="http://iptc.org/std/NITF/2006-10-18/">
+								<body>
+									<body.content>Content</body.content>
+								</body>
+							</nitf>
+						</inlineXML>
+					</contentSet>
+				</newsItem>';
+				
+		$post_contentCorrect = "Content";
+		
+		//Act
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray[0]['post']['post_content'] != $post_contentCorrect) {
+			echo "Test one failed: " . $parseArray[0]['post']['post_content'] . " != " . $post_contentCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
+	}
+	
+	private static function contentAnternate3Test() {
+		//Arrange
+		echo "<h4>Running contentAnternate3Test</h4>";
+		
+		$xml = '<newsItem>
+					<contentSet>
+						<inlineData>Content</inlineData>
+					</contentSet>
+				</newsItem>';
+				
+		$post_contentCorrect = "Content";
+		
+		//Act
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray[0]['post']['post_content'] != $post_contentCorrect) {
+			echo "Test one failed: " . $parseArray[0]['post']['post_content'] . " != " . $post_contentCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
+	}
+	
+	private static function headlineAlternate1Test() {
+		//Arrange
+		echo "<h4>Running headlineAlternate1Test</h4>";
+		
+		$xml = '<newsItem>
+					<contentSet>
+						<inlineXML>
+							<html xmlns="http://www.w3.org/1999/xhtml">
+								<head>
+									<title>Headline</title>
+								</head>
+							</html>
+						</inlineXML>
+					</contentSet>
+				</newsItem>';
+		
+		$post_titleCorrect = "Headline";
+		
+		//Act
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray[0]['post']['post_title'] != $post_titleCorrect) {
+			echo "Test one failed: " . $parseArray[0]['post']['post_title'] . " != " . $post_titleCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
+	}
+	
+	private static function headlineAlternate2Test() {
+		//Arrange
+		echo "<h4>Running headlineAlternate2Test</h4>";
+		
+		$xml = '<newsItem>
+					<contentSet>
+						<inlineXML>
+							<html xmlns="http://www.w3.org/1999/xhtml">
+								<head>
+									<title>Headline</title>
+								</head>
+							</html>
+						</inlineXML>
+					</contentSet>
+				</newsItem>';
+		
+		$post_titleCorrect = "Headline";
+		
+		//Act
+		try {
+			$parseArray = newsitemParse::createPost($xml);
+		} catch(Exception $e) {
+			echo 'Caught exception: ',  $e->getMessage(), "\n";
+		}
+		
+		//Assert
+		$success = true;
+		
+		if($parseArray[0]['post']['post_title'] != $post_titleCorrect) {
+			echo "Test one failed: " . $parseArray[0]['post']['post_title'] . " != " . $post_titleCorrect . "<br/>";
+			$success = false;
+		}
+		
+		var_dump($success);
+		return $success;
+	}
 }
-
 
 ?>
