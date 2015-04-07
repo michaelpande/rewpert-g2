@@ -171,10 +171,6 @@ class NewsItemParse {
 		$returnArray = array( 
 			'status_code' => 200 //int, the status code automatically set to 200
 		);
-		
-		if($newsItemList->length == 0) {
-			$returnArray['status_code'] = 400;
-		}
 
 		//Files the given array for each newsItem
 		foreach($newsItemList as $newsItem) {
@@ -190,22 +186,20 @@ class NewsItemParse {
 			
 			
 			
-			if(strcmp($newsItemArray['post']['post_status'], 'publish') == 0) {
+			if($newsItemArray['post']['post_status'] == 'publish') {
 				//Checking if an embargo date is present and changes 'post_status' accordingly
 				$newsItemArray['post']['post_status'] = self::setEbargoState($newsItemArray['meta']['nml2_embarogDate']);
 			}
 			
 			//Adds the information found in the newsItem to the array that will be sent to the RESTApi
 			if($_addToArray) {
-				//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
-				$returnArray['status_code'] = self::setStatusCode($returnArray, $newsItemArray);
 				array_push($returnArray, $newsItemArray);
-				
 			}
-			$_addToArray = true;
-				
+			$_addToArray = true;				
 		}
 		
+		//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
+		$returnArray['status_code'] = self::setStatusCode($returnArray, $newsItemArray);
 		return $returnArray;	
 	}
 	
@@ -421,7 +415,7 @@ class NewsItemParse {
 		*/
 		$content = $xpath->query($_ns."contentSet/".$_ns."inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem)->item(0);
 		
-		if($content === null) {
+		if($content == null) {
 			/*Trying this query if the above query  gives no result.
 			Query path that continues from first query at the start of the document.
 			Path without XML namespace: contentSet/inlineXML/html/body
@@ -429,7 +423,7 @@ class NewsItemParse {
 
 			$content = $xpath->query($_ns."contentSet/".$_ns."inlineXML/html:html/html:body", $newsItem)->item(0);
 
-			if($content === null) {
+			if($content == null) {
 				
 				/*Trying this query if the above query  gives no result.
 				  Query path that continues from first query at the start of the document.
@@ -437,7 +431,7 @@ class NewsItemParse {
 				*/  
 				$content = $xpath->query($_ns."contentSet/".$_ns."inlineXML/nitf:nitf/nitf:body/nitf:body.content", $newsItem)->item(0);
 				
-				if($content === null) {
+				if($content == null) {
 				
 					/*Trying this query if the above query  gives no result.
 					  Query path that continues from first query at the start of the document.
@@ -445,13 +439,14 @@ class NewsItemParse {
 					*/  
 					
 					$content = $xpath->query($_ns."contentSet/".$_ns."inlineData", $newsItem)->item(0);
-					
-					if($content === null) {
+
+					if($content == null) {
 						return null;
 					}
 				}
 			}
 		}
+		
 		$content = self::get_inner_html($content);
 
         return $content;
@@ -795,10 +790,6 @@ class NewsItemParse {
 			  Path without XML namespace: literal-attribute
 			*/
 			$userName  = $xpath->query("@literal", $cTag)->item(0)->nodeValue;
-			
-			if($$userName === null) {
-				return null;
-			}
 		}
 
 		
@@ -1214,9 +1205,7 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: rendition-attribute
 		*/
-		$rendition = $xpath->query("@rendition", $remoteContent)->item(0)->nodeValue;
-		
-		return $rendition;
+		return $xpath->query("@rendition", $remoteContent)->item(0)->nodeValue;
 	}
 	
 	/**
@@ -1235,9 +1224,7 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: contentMeta/description
 		*/
-		$description = $xpath->query($_ns."contentMeta/".$_ns."description", $newsItem)->item(0)->nodeValue;
-		
-		return $description;
+		return $xpath->query($_ns."contentMeta/".$_ns."description", $newsItem)->item(0)->nodeValue;
 	}
 	
 	/**
@@ -1252,21 +1239,28 @@ class NewsItemParse {
 	 * @return int 200 if all OK, 400 if something is missing and 'status_code' value if not 200
 	 * @author Petter Lundberg Olsen
 	 */
-	private static function setStatusCode($returnArray, $newsItemArray) {
+	private static function setStatusCode($returnArray) {
 		if($returnArray['status_code'] != 200) {
 			return $returnArray['status_code'];
-		} elseif($newsItemArray['post']['post_content'] == null) { //Checking if the content is missing);
-			return 400;
-		} elseif($newsItemArray['post']['post_title'] == null) { //Checking if the headline is missing
-			return 400;
-		} elseif($newsItemArray['meta']['nml2_guid'] == null) {  //Checking if the guid is missing
-			return 400;
-		} elseif($newsItemArray['meta']['nml2_version'] == null) { //Checking if the version number is missing
-			return 400;
-		} else {
-			return 200;
 		}
 		
+		if(count($returnArray) == 0) {
+			return 400;
+		}
+		
+		for($i = 0; $i < count($returnArray) - 1; $i++) {
+			if($returnArray[$i]['post']['post_content'] == null) {
+				return 400;
+			} else if($returnArray[$i]['post']['post_title'] == null) {
+				return 400;
+			} else if($returnArray[$i]['meta']['nml2_guid'] == null) {
+				return 400;
+			} else if($returnArray[$i]['meta']['nml2_version'] == null) {
+				return 400;
+			}
+		}	
+		
+		return 200;
 	} 
 
 	/**
@@ -1341,7 +1335,7 @@ class NewsItemParse {
 		$children = $node->childNodes; 
 		foreach ($children as $child) { 
 			$innerHTML .= $child->ownerDocument->saveXML( $child ); 
-		} 
+		}
 
 		return $innerHTML;  
 	}
