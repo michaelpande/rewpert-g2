@@ -115,8 +115,8 @@ class NewsItemParse {
 		);
 	*/		
 	
-	//A variable holding the namespace of the xml file
-	//Automatic set to empty string and changed if xml has a namespace in its outermost tag
+	/*
+		$_ns = comtains the outer 
 	private static $_ns;
 	private static $_addToArray;
 	private static $_xpath;
@@ -176,9 +176,10 @@ class NewsItemParse {
 			}
 			$_addToArray = true;				
 		}
-		
+
 		//Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
 		$returnArray['status_code'] = self::setStatusCode($returnArray, $newsItemArray);
+		
 		return $returnArray;	
 	}
 	
@@ -186,6 +187,8 @@ class NewsItemParse {
 		global $_ns;
 		global $_xpath;
 		$doc = new DOMDocument();
+		
+		$file = ltrim($file);
 		
 		//Checks if $file is raw XML or a XML file and uses the correct load operation
 		if(is_file($file)) {
@@ -257,8 +260,8 @@ class NewsItemParse {
 			'nml2_embarogDate' 	  	=> self::getMetaEmbargo($newsItem), //string, timestamp of the embargo
 			'nml2_newsMessageSendt' => self::getMetaSentDate(), //string, timestamp from when the newsMessage where sent
 			'nml2_language'			=> self::getMetaLanguage($newsItem), //string, the language of the content in the newsItem
-			'nml2_copyrightHolder' 	=> self::getMetaCopyrightHolder($newsItem),
-			'nml2_copyrightNotice' 	=> self::getMetaCopyrightNotice($newsItem),
+			'nml2_copyrightHolder' 	=> self::getMetaCopyrightHolder($newsItem), //string, 
+			'nml2_copyrightNotice' 	=> self::getMetaCopyrightNotice($newsItem), //string,
 		);
 		
 		return $meta;
@@ -379,9 +382,9 @@ class NewsItemParse {
 					'width' 	  => self::getPhotoWidth($node), //string, the width of the picture in px
 					'height' 	  => self::getPhotoHeight($node), //string, the height of the image
 					'contenttype' => self::getPhotoContenttype($node), //string, what type of file the image is
-					'colourspace' => self::getPhotoColourspace($node), //string, what colorspace the image is
+					'colourspace' => self::getPhotoColourspace($node), //string, what colourspace the image is
 					'rendition'   => self::getPhotoRendition($node), //string, tells if the image is higres, meant for web, or is a thumbnail
-					'description' => self::getPhotoDescription($newsItem)
+					'description' => self::getPhotoDescription($newsItem) //string, the description of the image
 					);
 					
 					array_push($returnArray[$i]['photo'], $photo); 
@@ -414,11 +417,11 @@ class NewsItemParse {
 		$content = $_xpath->query($_ns."contentSet/".$_ns."inlineXML/html:html/html:body/html:article/html:div[@itemprop='articleBody']", $newsItem)->item(0);
 		
 		if($content == null) {
+			
 			/*Trying this query if the above query  gives no result.
 			Query path that continues from first query at the start of the document.
 			Path without XML namespace: contentSet/inlineXML/html/body
 			*/  
-
 			$content = $_xpath->query($_ns."contentSet/".$_ns."inlineXML/html:html/html:body", $newsItem)->item(0);
 
 			if($content == null) {
@@ -435,7 +438,6 @@ class NewsItemParse {
 					  Query path that continues from first query at the start of the document.
 					  Path without XML namespace: contentSet/inlineData
 					*/  
-					
 					$content = $_xpath->query($_ns."contentSet/".$_ns."inlineData", $newsItem)->item(0);
 
 					if($content == null) {
@@ -508,6 +510,9 @@ class NewsItemParse {
 		global $_ns;
 		global $_xpath;
 		
+		/*Query path that continues from first query at the start of the document
+		  Path without XML namespace: itemMeta/pubStatus/qcode-attribute
+		*/
 		$nodelist = $_xpath->query($_ns."itemMeta/".$_ns."pubStatus/@qcode", $newsItem)->item(0)->nodeValue;
 		
 		if(strcmp($node->nodeValue, "stat:withheld") == 0) {
@@ -931,9 +936,9 @@ class NewsItemParse {
 		//This loop creates the name arrays and storing there information
 		foreach($nodelist as $node) {
 			$name = array(
-				'text' => $node->nodeValue,
-				'lang' => self::getSubjectLang($node),
-				'role' => self::getSubjectRole($node)
+				'text' => $node->nodeValue, //string, the actual name
+				'lang' => self::getSubjectLang($node), //string, the language of the name
+				'role' => self::getSubjectRole($node) //string, the role of the name
 			);
 			
 			array_push($nameArray, $name);
@@ -1184,6 +1189,7 @@ class NewsItemParse {
 	 * @author Petter Lundberg Olsen
 	 */
 	private static function setStatusCode($returnArray) {
+		
 		if($returnArray['status_code'] != 200) {
 			return $returnArray['status_code'];
 		}
@@ -1266,14 +1272,15 @@ class NewsItemParse {
 	}
 	
 	/**
-	 * Forklarende tekst
+	 * Gets the inner html tags in a DOMNode
 	 *
-	 * Utfylende text
+	 * This function takes a DOMNode and makes sure that the node value contains the original html/xml tags
+	 * that woad otherwise be removed.
+	 * Attribution:
+	 * From php manual comment 101243, http://php.net/manual/en/class.domelement.php#101243
 	 *
 	 * @param DOMNode $node
-	 *
-	 * Attribution:
-	 * From php manual coment 101243, http://php.net/manual/en/class.domelement.php#101243
+	 * @return string innerHTML, the result from a query containing html tags
 	 */
 	private static function get_inner_html($node) { 
 		$innerHTML= ''; 
