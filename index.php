@@ -1,16 +1,16 @@
 <?php
 
     /**
-     * Plugin Name: RESTFul NewsML-G2 Import
-     * Plugin URI: http://URI_Of_Page_Describing_Plugin_and_Updates
-     * Description: A NewsML-G2 Import plugin for wordpress
-     * Version: 1.0.0
-     * Author: Name of the plugin author
-     * Author URI: http://URI_Of_The_Plugin_Author
+     * Plugin Name: Rewpert-G2
+     * Plugin URI: http://demo-nmlg2wp.rhcloud.com/
+     * Description: A RESTful WordPress plugin for importing NewsML G2, repository can be found on plugin url.
+     * Version: 1
+     * Author: Michael Pande, Petter Lundberg Olsen, Diego A. Pasten Bahamondes
+     * Author URI: http://demo-nmlg2wp.rhcloud.com/
      * Text Domain: Optional. Plugin's text domain for localization. Example: mytextdomain
      * Domain Path: Optional. Plugin's relative directory path to .mo files. Example: /locale/
      * Network: Optional. Whether the plugin can only be activated network wide. Example: true
-     * License: A short license name. Example: GPL2
+     * License: MIT
      */
 
 
