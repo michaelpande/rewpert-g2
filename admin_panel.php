@@ -128,9 +128,8 @@
 <h2>Quick reference</h2>
 		<div class="nml2-right">
 			<h4>Documentation</h4>
-			<a href="<?php echo getPathToPluginDir();?>docu">Documentation</a><br>
-			<a href="<?php echo getPathToPluginDir();?>docu#jumpto_2">Examples</a><br>
-			<a href="http://github.com">Source code</a><br>
+			<a href="http://demo-nmlg2wp.rhcloud.com/documentation.php">Documentation</a><br>
+			<a href="https://bitbucket.org/michaelpande/newsml-g2-restful-wordpress-import">Source code</a><br>
 		
 		</div>
 		<div class="nml2-right">
