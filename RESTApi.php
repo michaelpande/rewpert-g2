@@ -4,6 +4,7 @@
 * This PHP file handles all interaction with the Wordpress Database and makes it possible to send HTTP POST requests with 
 * NewsML-G2 in XML to WordPress. 
 * Usage of this REST API requires a key, the key is retrieved from the WordPress database after installing the plugin.
+* The REST API transaction is not atomic, the post will still be added to the WordPress database even if subjects or authors fail. 
 *
 * RESPONSES:
 * 201: Created * Updated or created new
@@ -20,6 +21,11 @@
 * @author Michael Pande
 */
  
+ 
+ 
+ 
+ 
+
 	// Turns output buffering on, making it possible to modify header information after echoing, printing and var_dumping. 
 	ob_start();
 	$DEBUG = false;
@@ -45,9 +51,14 @@
 	require('parser/QCodes.php'); 			  // Handles storage and retrieval of QCodes and their values. 
 	require('unit_test/unitTestManager.php'); //Performs unit tests
 	
+	
+	
+	
 	//Comment out the line below to stop unit testing
-//	unitTestManager::performUnitTest();
+	//unitTestManager::performUnitTest();
 
+	
+	
 	
 	// Authentication, returns 401 if wrong API key
 	debug("<h3>Authentication</h3>");
@@ -84,10 +95,11 @@
 	
 	// Sends the posted data to the NewsItemParser and if everything went OK it gets a multidimensional array in return of values.
 	
-	// CHECK IF CONTAINS KNOWLEDGEITEM
+	// UPDATE QCODES IF IT CONTAINS KnowledgeItem
 	$qcodes = QCodes::update($postdata);
 	debug("<h3>Returned from KnowledgeItemParser.php: </h3>");
 	debug($qcodes);
+	
 	// CHECK IF CONTAINS NewsItem
 	$parsed = newsItemParse::createPost($postdata);
 	
@@ -134,14 +146,6 @@
 			debug($wp_error);
 			
 			
-			// Wordpress returns post_id if successful, so a number can be used to confirm a successful post creation.
-			if( is_numeric($wp_error) ) {
-				setAuthors($authors, $wp_error);
-			}
-			
-			
-			
-			
 			
 		// Something vital is missing after parsing
 		}else{
@@ -153,74 +157,6 @@
 	exitAPI();
 			
 
-			
-			
-			
-			
-
-	/**
-	 * Authenticates and returns true if API key matches the key sent with HTTP_GET['key'].
-	 * 
-	 * @return boolean
-	 *
-	 * @author Michael Pande
-	 */
-	function authentication(){
-		global $DEBUG;
-		
-		if (isset($_GET['key'])) {
-			$USER_KEY = $_GET['key'];
-			
-			if($USER_KEY == getAPIkey()){
-				return true;
-			}
-		
-		}
-		return false;
-	}
-
-	
-	
-
-	/**
-	 * Returns Wordpress Post by NML2-GUID
-	 *
-	 * This method uses a GUID from the NewsML-G2 and checks for a WordPress post with same GUID meta value.
-	 *
-	 * @param STRING the GUID to match WordPress posts with
-	 * @return First matching post with GUID
-	 *
-	 * @author Michael Pande
-	 */
-	function getPostByGUID($guid){
-		
-		debug("<p><strong>Get post by nml2-guid:</strong> $guid </p>");
-		
-		$args = array(
-			'meta_key' => 'nml2_guid',
-			'meta_value' => $guid,
-			'post_status' => 'any'
-		);
-		
-		$the_query = new WP_Query( $args );
-		
-		debug($the_query);
-		
-		
-		// The WordPress Loop
-		if ( $the_query->have_posts() ) {
-			
-			
-			while ( $the_query->have_posts() ) {
-				$the_query->the_post();
-				return get_post();
-			}
-			
-		}
-		
-		return null;
-
-	}
 	
 
 	/**
@@ -248,6 +184,8 @@
 		debug("<strong>Existing post: </strong>");
 		debug($existing_post);
 		
+		
+		
 		// Sets date on WP_POST object, it supports GMT (UTC) and Non-GMT.
 		if(isset($meta['nml2_versionCreated'])){
 			debug("Dato Non-GMT" . DateParser::getNonGMT($meta['nml2_versionCreated']));
@@ -255,9 +193,12 @@
 			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']); 
 			$post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
 		}
+
+		
 		
 		// Sets author like the creator, for the single author support in WordPress, multi author support is handled in another method
-		$post['post_author'] = getCreator($authors);
+		$post['post_author'] = getCreator($authors); // null = Will be shown as default user in WP (Admin)
+		
 		
 		
 		
@@ -268,15 +209,19 @@
 			
 			$version = $meta['nml2_version'];
 			
+			
 			// Check if imported version is higher than stored. 
 			if($UPDATE_OVERRIDE || $version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){ // Array Dereferencing (Requires PHP version >= 5.4)
 				debug("<p>UPDATE EXISTING RECORD</p>");
 				$post['ID'] = $existing_post->ID; 
-				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
+				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions in wp_database, only showing the newest. Both are accessible through the WP admin interface.
+				
 				
 			}else{
 				debug("<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>"); // Array Dereferencing (Requires PHP version >= 5.4)
 			}
+			
+			
 		}else{
 			$result = wp_insert_post( $post, true); // Creates new post
 			
@@ -296,6 +241,11 @@
 			
 			setHeader(201); // Created
 				
+		}
+		
+		// Wordpress returns post_id if successful, so a number can be used to confirm a successful post creation.
+		if( is_numeric($result) && $authors != null ) {
+			setAuthors($authors, $result); // Allows multiple author support. 
 		}
 		
 		if($result == null){
@@ -621,6 +571,8 @@
 	 */
 	function getCreator($authors){
 		debug("<strong>Get creator</strong>");
+		if($authors == null)
+			return null;
 		
 		foreach($authors as $nameKey=>$nameVal){
 			
@@ -679,7 +631,7 @@
 		
 		
 		// Return if null or author has no name
-		if($auth == null || $auth['user_login'] == null){
+		if($auth == null || strlen($auth['user_login']) <= 0){
 			return;
 		}
 		
@@ -710,6 +662,9 @@
 	 * @author Michael Pande
 	 */
 	function fileUpload(){
+		if($_FILES["uploaded_file"]["tmp_name"] == null){
+			 return null;
+		}
 		return file_get_contents($_FILES["uploaded_file"]["tmp_name"]);	
 	}
 
@@ -732,7 +687,82 @@
 		exit;
 	}
 
+	
+	
+	
+	
+	/**
+	 * Authenticates and returns true if API key matches the key sent with HTTP_GET['key'].
+	 * 
+	 * @return boolean
+	 *
+	 * @author Michael Pande
+	 */
+	function authentication(){
+		global $DEBUG;
+		
+		if (isset($_GET['key'])) {
+			$USER_KEY = $_GET['key'];
+			
+			if($USER_KEY == getAPIkey()){
+				return true;
+			}
+		
+		}
+		return false;
+	}
 
+	
+	
+	
+	
+	
+
+	/**
+	 * Returns Wordpress Post by NML2-GUID
+	 *
+	 * This method uses a GUID from the NewsML-G2 and checks for a WordPress post with same GUID meta value.
+	 *
+	 * @param STRING the GUID to match WordPress posts with
+	 * @return First matching post with GUID
+	 *
+	 * @author Michael Pande
+	 */
+	function getPostByGUID($guid){
+		
+		debug("<p><strong>Get post by nml2-guid:</strong> $guid </p>");
+		
+		$args = array(
+			'meta_key' => 'nml2_guid',
+			'meta_value' => $guid,
+			'post_status' => 'any'
+		);
+		
+		$the_query = new WP_Query( $args );
+		
+		debug($the_query);
+		
+		
+		// The WordPress Loop
+		if ( $the_query->have_posts() ) {
+			
+			
+			while ( $the_query->have_posts() ) {
+				$the_query->the_post();
+				return get_post();
+			}
+			
+		}
+		
+		return null;
+
+	}
+	
+	
+	
+	
+	
+	
 	/**
 	 * Returns useful debugging messages if &debug=true
 	 * echos strings and xs everything else.

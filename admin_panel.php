@@ -43,6 +43,46 @@
 
 <!-- Import file -->
 
+	<script language="javascript">
+	window.onload = function(e){ 
+	
+		
+		// Appends / Removes HTTP_GET parameter from URL
+		
+		var urlInput = document.getElementById('url');
+		var url = urlInput.value;
+		var debugbox = document.getElementById('debugbox');
+		var updatebox = document.getElementById('updatebox');
+		
+		
+		
+		debugbox.addEventListener("click", function(){
+			updateURL();
+		
+		});
+		
+		updatebox.addEventListener("click", function(){
+			updateURL();
+		
+		});
+		
+		
+		function updateURL(){
+			
+
+			var full_url = url;
+			
+			if(updatebox.checked)
+				full_url = full_url + "&update_override=true";
+			if(debugbox.checked)
+				full_url = full_url + "&debug=true"
+			
+			urlInput.value = full_url;
+		}
+		
+		
+	};
+	</script>
     
 	<h1>RESTful NewsML-G2</h1><br>
 	
@@ -56,7 +96,8 @@
 	
 	<?php echo '<form class="well" action="'.htmlspecialchars($_SERVER["PHP_SELF"]).'?page=newsml-g2" method="post" enctype="multipart/form-data">' ?>
 	<h3>POST the XML to the following url</h3> 
-	<label for="debugbox" >Debug</label> <input type="checkbox" name="debugbox" id="debugbox" value="false" /><br><br>
+	<label for="debugbox" >Debug</label> <input type="checkbox" name="debugbox" id="debugbox" value="false" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<label for="updatebox" >Update Override</label> <input type="checkbox" name="updatebox" id="updatebox" value="false" /><br><br>
 	<input style='width:100%' id="url" type="text" value='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>' />
 	<br><br>
 	<br>

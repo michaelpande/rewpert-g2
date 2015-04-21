@@ -181,12 +181,17 @@ class KnowledgeItemParse {
 		
 		$doc = new DOMDocument();
 		
+		if($file == null){
+			return null;
+		}
 		
+		$file = ltrim($file);
 		//Checks if $file is file or text
 		if(is_file($file)) {
 			$doc->load($file);
 		}
 		else {
+			
 			$doc->loadXML($file);
 		
 		}
