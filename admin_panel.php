@@ -111,10 +111,12 @@
 	
 	<div class="nml2-container">
 	<h2>Manual Upload</h2>
-	<p><strong>Supports: </strong>NewsItems & KnowledgeItems</p>
+	<p><strong>Supports: </strong>NewsItems & KnowledgeItems. </p>
+	<p><strong>Update: </strong>It overwrites existing post with GUID, and ignores version.</p>
 		<p><strong>IPTC CV Subjects: </strong>http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB (Max 10/day)</p>
 	<p><strong>IPTC CV Mediatopics: </strong>http://cv.iptc.org/newscodes/mediatopic?format=g2ki&lang=en-GB (Max 10/day)</p>
-	<form id="manual" action='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>&manual=true' enctype="multipart/form-data" method="post">
+	
+	<form id="manual" action='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>&manual=true&update_override=true' enctype="multipart/form-data" method="post">
 		
 		<input type="file" name="uploaded_file" id="uploaded_file" ><br><br>
 		<input type="submit" id="startImport" value="Start import" name="submit" >

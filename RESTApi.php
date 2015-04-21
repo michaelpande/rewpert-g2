@@ -681,8 +681,15 @@
 		if(!$DEBUG){
 			ob_clean();
 		}
+		
+		// Always return successful (Not critical should be fixed)
 		if($MANUAL_UPLOAD){
-			die("File successfully uploaded " . '<br><a href="'.$_SERVER['HTTP_REFERER'].'">Back</a>');
+		
+			if(http_response_code() == 201){
+				die("File successfully uploaded: " . http_response_code() . '<br><a href="'.$_SERVER['HTTP_REFERER'].'">Back</a>');
+			}else{
+				die("File upload failed: " . http_response_code() . '<br><a href="'.$_SERVER['HTTP_REFERER'].'">Back</a>');
+			}
 		}
 		exit;
 	}
