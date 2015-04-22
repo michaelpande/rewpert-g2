@@ -10,7 +10,7 @@ class errorLogger{
 		public static function headerStatus($event) {
 			
 			if(headers_sent() || $event == null || !is_numeric($event)){
-				;
+				return;
 			}
 			switch($event){
 				case 100 : $message = "Continue"; break; 
@@ -29,38 +29,7 @@ class errorLogger{
 			$HTTP = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
 			header($HTTP . ' ' . $event . ' ' . $message);
 	}
-/*
-	//Idea is to call this function when an error happens
-	public static function createAnErrorEntry($errno, $errstr) {
-		$filename = 'errorLogFile.log';
-		
-		//If file does not exist create it
-		//r+ means read and write and pointer set to start of file.
-		if (!file_exists(filename)) {
-			fopen(filename, "r+")
-		}
-		else {
-			echo "<b>Error: </b> [$errno] $errstr<br>";
-			echo "Logfile for plugin has been updated.";
-			error_log("[$errno] $errstr<br>\n", 3, "errorLogFile.log");
-		}
-	
 
-
-	//Call this function to list out errors
-	//NOT YET COMPLETE
-	//As it stands it will read the whole file, which can be problematic with
-	//huge logfiles. 
-	public static function fetchErrorsFromFile() {
-		$filename = 'errorLogFile.log';
-		$fetched = fopen($filename, 'r')
-		while(! feof($filename))
-		{
-			echo fgets($filename). "<br/>"
-		}
-		fclose($filename);
-	}
-*/
 
 
 }
