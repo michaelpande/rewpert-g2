@@ -132,7 +132,7 @@ class NewsItemParse {
 	 * @return array
 	 * @author Petter Lundberg Olsen
 	 */
-	public static function createPost($file){
+	public static function parseNewsML($file){
 		global $_ns;
 		global $_addToArray;
 		global $_xpath;

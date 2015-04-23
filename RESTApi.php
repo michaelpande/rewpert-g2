@@ -63,13 +63,14 @@
 
 		if($containedKnowledgeItems){
 			debug("KnowledgeItem was imported, setting http header 201");
-			setHeader(201);
+            httpHeader::setHeader(201);
 		}else{
 			debug("Did not contain KnowledgeItem, so use http header from NewsItemParser");
-			setHeader($parsedXML['status_code']);
+            httpHeader::setHeader($parsedXML['status_code']);
+
 		}
 
-		exitApi();
+		exitAPI();
 	}
 
 
@@ -77,7 +78,7 @@
 
 	// For each NewsItem or similar returned from NewsItemParse
 	foreach($parsedXML as $newsItem){
-		insertPost($newsItem);
+		insertNewsItem($newsItem);
 	}
 	
 	
@@ -97,8 +98,9 @@
 	 * @param $newsItem - A NewsItem object (array of values)
 	 * @author Michael Pande
 	 */
-	function insertPost($newsItem){
+	function insertNewsItem($newsItem){
 		global $UPDATE_OVERRIDE;
+        debug("<h2>Insert/Update Post: </h2>");
 
         $post = $newsItem['post'];
         $meta = $newsItem['meta'];
@@ -107,54 +109,49 @@
         $photos = $newsItem['photo'];
 
 
-        // Check if something vital is missing after parsing
         if($post == null && $meta == null && ($post['post_content'] == null || $post['post_title'] == null)){
             debug('Something vital was not parsed: importing stopped.');
             return;
         }
 
-        debug("<h2>Insert/Update Post: </h2>");
 
-		// Sets date on WP_POST object, it supports GMT (UTC) and Non-GMT.
-		if(isset($meta['nml2_versionCreated'])){
-			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']);
-			$post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
-		}
+        $post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']);
+        $post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
 
 
 
-		// Sets author like the creator, for the single author support in WordPress, multi author support is handled in another method
-		$post['post_author'] = getCreator($authors); // null = Will be shown as default user in WP (Admin)
+
+
+		$post['post_author'] = getCreator($authors);    // Sets author like the creator, for the single author support in WordPress, multi author support is handled in another method
 
 
         $existing_post = getPostByGUID($meta['nml2_guid']);
-        debug("<strong>Existing post: </strong>");
-        debug($existing_post);
 
-		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
-		if(	$existing_post != null){
-			debug('<strong>Found post with ID: </strong> $post_id -> Just update existing');
-			debug($existing_post);
-			
-			$version = $meta['nml2_version'];
-			
-			
-			// Check if imported version is higher than stored. 
-			if($UPDATE_OVERRIDE || $version > get_post_meta( $existing_post->ID, 'nml2_version' )[0]){ // Array Dereferencing (Requires PHP version >= 5.4)
-				debug("<p>UPDATE EXISTING RECORD</p>");
-				$post['ID'] = $existing_post->ID; 
-				$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions in wp_database, only showing the newest. Both are accessible through the WP admin interface.
-				
-				
-			}else{
-				debug("<p>NOT A NEWER VERSION: " . get_post_meta( $existing_post->ID, 'nml2_version' )[0] . "</p>"); // Array Dereferencing (Requires PHP version >= 5.4)
-			}
-			
-			
-		}else{
-			$result = wp_insert_post( $post, true); // Creates new post
-			
-		}
+
+
+
+        if($existing_post == null){
+            debug('<p>Did not find previous NewsItem (WP_POST) with same GUID, inserting the new one.</p>');
+            $result = wp_insert_post( $post, true); // Creates new post
+        }
+
+
+        // Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
+        else if($existing_post != null && ($UPDATE_OVERRIDE || $meta['nml2_version'] > get_post_meta( $existing_post->ID, 'nml2_version' )[0]) ){   // Array Dereferencing (Requires PHP version >= 5.4)
+            debug('<p>Found NewsItem (WP_POST) with same GUID, starting update.</p>');
+            $post['ID'] = $existing_post->ID;
+            $result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions in wp_database, only showing the newest. Both are accessible through the WP admin interface.
+        }
+
+
+        // Found post, but not newer version
+        else if($existing_post != null){
+            debug("<p>Found NewsItem (WP_POST) with same GUID, but the NewsML-G2 document had a version number lower or equal to the existing post: ");
+        }
+
+
+
+
 
 
 
@@ -174,14 +171,15 @@
         debug( $result);
 		
 		if($result == null){
-			setHeader(409); // Conflict (Existing copy with same version number and GUID)
+			httpHeader::setHeader(409); // Conflict (Existing copy with same version number and GUID)
+            exitAPI();
 		}
 
 		if(is_numeric($result)){
-			setHeader(201); // Created
+            httpHeader::setHeader(201); // Created
 		}
         else {
-	        setHeader( 304 ); // Not modified
+            httpHeader::setHeader( 304 ); // Not modified
         }
 
 	}
@@ -198,12 +196,13 @@
 	 */
 	function insertPhotos($post_id, $post, $photos){
 		debug("<h2>Insert Photos</h2>");
+
 		if(!is_numeric($post_id) || $post == null || $photos == null){
 			return;
 		}
+
 		$count = 0;
 		$firstUrl = null;
-		$setFeatureImage = true;
 		
 		foreach($photos as $key=>$val){
 				if($val["href"] != null){
@@ -226,11 +225,10 @@
 						
 						$new_url = "src=\"". getPathToPluginDir() .$imgUrl."\"";
 						
-						// Replace 
-						if($firstUrl == null){
+
+						if($firstUrl == null){  // Replace
 							$firstUrl = getPathToPluginDir() .$imgUrl;
-							// Remove first img tag. 	
-							$post['post_content'] =  preg_replace('/(<img[^>]+>)/i','',$post['post_content'],1); 
+							$post['post_content'] =  preg_replace('/(<img[^>]+>)/i','',$post['post_content'],1);    // Remove first img tag.
 						}
 						
 						
@@ -248,12 +246,11 @@
         $post['ID'] = $post_id; // Ensure that ID is set
 		$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
 		
-		// Set feature image 
-		if($firstUrl != null){
+
+		if($firstUrl != null){      // Set feature image
 			
 			setFeatureImage($post_id, $firstUrl);
 
-			//update_post_meta($post_id, '_wp_attached_file', $firstUrl);
 		}
 		
 		debug("<strong>Result from WP_UPDATE:</strong>");
@@ -361,8 +358,7 @@
 
 		$category_id = array();
 
-		
-		//foreach subject in meta
+
 		foreach($subjects as $key=>$subject){
 			
 			// Have to find match on language 
@@ -395,7 +391,6 @@
 				
 				
 				if($id != null){
-					// PUSH TO ARRAY
 					array_push($category_id, $id);
 					
 				}
@@ -477,23 +472,7 @@
 	
 	
 	
-	/**
-	 * This method sets the header with an http status. 
-	 *
-	 * @param int $event - The number that will be set.
-	 *  
-	 * @author Michael Pande
-	 */
-	function setHeader($event){
-		if($event != null){
-			if($event != 200 && $event != 201){
-				httpHeader::setHeader($event);
-				exitApi();
-			}
-			httpHeader::setHeader($event);
-			
-		}
-	}
+
 	
 	
 	/**
@@ -598,7 +577,7 @@
 	 *
 	 * @author Michael Pande
 	 */
-	function exitApi(){
+	function exitAPI(){
 		global $DEBUG, $MANUAL_UPLOAD;
 		
 		
@@ -625,8 +604,8 @@
 
         if(!authentication()){
             debug("Failed");
-            setHeader(401); // Unauthorized
-            exitApi();
+            httpHeader::setHeader(401); // Unauthorized
+            exitAPI();
         }
         debug("Successful");
     }
@@ -695,7 +674,7 @@
 		
 		$the_query = new WP_Query( $args );
 		
-		debug($the_query);
+
 		
 		
 		// The WordPress Loop

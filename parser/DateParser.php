@@ -234,7 +234,9 @@ class DateParser{
 
 	public static function getGMTDateTime($date){
 	
-	
+	    if($date == null){
+            return null;
+        }
 		
 		// Get offset
 		preg_match('((\+|-)\w{2}:\w{2})', $date, $offset);
@@ -279,6 +281,11 @@ class DateParser{
 	
 	// Removes offset and returns a simple datetime, will just return the time.
 	public static function getNonGMT($date){
+
+        if($date == null){
+            return null;
+        }
+
 		// Get offset
 		preg_match('((\+|-)\w{2}:\w{2})', $date, $offset);
 		if(isset($offset[0])){
