@@ -1,8 +1,5 @@
 <?php
-	
-    // errorLogger.php is our global error logger. It saves the errorlogs to a file.
-    include('/parser/errorLogger.php');
-	
+
 	if(isset($_POST["NewKey"])){
 		updateAPIkey();
 	}else{

@@ -20,142 +20,68 @@
 *
 * @author Michael Pande
 */
- 
- 
- 
- 
- 
 
-	// Turns output buffering on, making it possible to modify header information after echoing, printing and var_dumping. 
-	ob_start();
-	$DEBUG = false;
-	$UPDATE_OVERRIDE = false; // True = Ignore versionnumber in NewsItem and do update anyways.
-	
-	if(isset($_GET["debug"]) && $_GET["debug"] == true){
-		error_reporting(E_ALL);
-		ini_set('display_errors', 1);
-		$DEBUG = true;
-	}
-	
-	if(isset($_GET["update_override"]) && $_GET["update_override"] == true){
-		$UPDATE_OVERRIDE = true;
-	}
-	
-	if(isset($_GET["manual"]) && $_GET["manual"] == true){
-		$MANUAL_UPLOAD = true;
-	}
-	require('parser/newsItemParse.php'); 	  // Parses NewsML-G2 NewsItems 
-	require('parser/DateParser.php'); 		  // Parses Date strings
-	require('parser/errorLogger.php'); 		  // Logs errors
-	require('../../../wp-load.php'); 		  // Potentially creates bugs. Necessary to access methods in the wordpress core from outside.
-	require('parser/QCodes.php'); 			  // Handles storage and retrieval of QCodes and their values. 
-	require('unit_test/unitTestManager.php'); //Performs unit tests
-	
-	
-	
-	
-	//Comment out the line below to stop unit testing
-	//unitTestManager::performUnitTest();
+    require('parser/newsItemParse.php'); 	  // Parses NewsML-G2 NewsItems
+    require('parser/DateParser.php'); 		  // Parses Date strings
+    require('parser/httpHeader.php'); 		  // Sets HTTP status codes
+    require('parser/QCodes.php'); 			  // Handles storage and retrieval of QCodes and their values.
+    require('functions/functions.php');
+    require('../../../wp-load.php'); 		  // Potentially creates bugs. Necessary to access methods in the WordPress core from outside.
 
-	
-	
-	
-	// Authentication, returns 401 if wrong API key
-	debug("<h3>Authentication</h3>");
-	
-	if(!authentication()){
-		debug("Failed");
-		setHeader(401); // Unauthorized
-		exitApi();
-	}
-	debug("Successful");
-	
-	
-	
+
+
+	ob_start();                     // Turns output buffering on, making it possible to modify header information (status codes etc) after echoing, printing and var_dumping.
+
+	$DEBUG = false;                 // Return debug information or not
+	$UPDATE_OVERRIDE = false;       // True = Ignore version number in NewsItem and do update anyways.
+    $MANUAL_UPLOAD = false;         // If the import is done manually
+
+    setGlobalUserVariables();       // Sets the global variables above with user values
+
+    authenticateUser();             // Stops the entire process if key is invalid
+
+	$userInput = getUserInput();    // Will stop the entire process if invalid request and set headers accordingly
 	
 
-	// Checks request method, returns 400 if not HTTP POST
-	if($_SERVER['REQUEST_METHOD'] != 'POST'){
-		debug("The REQUEST_METHOD was not POST");
-		setHeader(400); // Bad Request
-		exitApi();
-	}
 
-	
-	
-	
-	 // Gets parameters from the HTTP REQUEST
-	$postdata = getRequestParams();
-	
 
-	$file = fileUpload();
-	if($file != null){
-		$postdata = $file;
-	}
-	
-	// Sends the posted data to the NewsItemParser and if everything went OK it gets a multidimensional array in return of values.
-	
-	// UPDATE QCODES IF IT CONTAINS KnowledgeItem
-	$qcodes = QCodes::update($postdata);
+
+    $containedKnowledgeItems = QCodes::updatePluginDB($userInput);   // If $userInput has KnowledgeItem: Updates the plugin specific QCodes database with QCodes
 	debug("<h3>Returned from KnowledgeItemParser.php: </h3>");
-	debug($qcodes);
-	
-	// CHECK IF CONTAINS NewsItem
-	$parsed = newsItemParse::createPost($postdata);
-	
-	
+	debug($containedKnowledgeItems);
 
-	
-	// Show what was returned from NewsItemParse 
+
+    $parsedXML = newsItemParse::parseNewsML($userInput);              // Gets a multidimensional array in return with potential NewsItems.
 	debug("<h3>Returned from NewsItemParse.php: </h3>");
-	debug($parsed); // var_dumps the values
-	
-	
-	
-	
-	// Checks if something went wrong during parsing
-	if($parsed['status_code'] != 200){
-		
-		if($qcodes){
-			debug("KnowledgeItem was imported, set http header 201");
+    debug($parsedXML);
+
+
+
+
+
+	if($parsedXML['status_code'] != 200){       // Checks if something went wrong during parsing
+
+		if($containedKnowledgeItems){
+			debug("KnowledgeItem was imported, setting http header 201");
 			setHeader(201);
 		}else{
 			debug("Did not contain KnowledgeItem, so use http header from NewsItemParser");
-			setHeader($parsed['status_code']);
+			setHeader($parsedXML['status_code']);
 		}
-		
+
 		exitApi();
 	}
-	
-	
-	
+
+
+
 
 	// For each NewsItem or similar returned from NewsItemParse
-	foreach($parsed as $key => $value){
-		
-		$post = $value['post'];
-		$meta = $value['meta'];
-		$subjects = $value['subjects'];
-		$authors = $value['users'];
-		$photos = $value['photo'];	
-			
-		if($post != null && $meta != null && ($post['post_content'] != null || $post['post_title'] != null)){
-			// Insert post, metadata, subjects and creator of post (1 author, not necessarily all) 
-			$wp_error = insertPost($post, $meta, $subjects, $authors, $photos);
-			debug("<h3>Returned from Wordpress: </h3>");
-			debug($wp_error);
-			
-			
-			
-		// Something vital is missing after parsing
-		}else{
-			debug('$post ($post, $post["post_content"], $post["post_title"]) or $meta is null, importing is now stopped.');
-		}
+	foreach($parsedXML as $newsItem){
+		insertPost($newsItem);
 	}
 	
 	
 	exitAPI();
-			
 
 	
 
@@ -168,43 +94,46 @@
 	 *    Creators / Contributors (authors) 
 	 * 	into WordPress 
 	 *
-	 * @param $post - A WP_Post object (array of values)
-	 * @param $meta - An array of metadata 
-	 * @param $subjects - A multidimensional array of subjects containing qcodes, names and misc metadata
-	 * @param $authors - A multidimensional array of users. 
-	 * @param $photos - A multidimensional array of photos. 
-	 * @return $result - After attempting to create a WP post this result is created.
+	 * @param $newsItem - A NewsItem object (array of values)
 	 * @author Michael Pande
 	 */
-	function insertPost($post, $meta, $subjects, $authors, $photos){
+	function insertPost($newsItem){
 		global $UPDATE_OVERRIDE;
-		debug("<h2>Insert Post: </h2>");
-		
-		$existing_post = getPostByGUID($meta['nml2_guid']);
-		debug("<strong>Existing post: </strong>");
-		debug($existing_post);
-		
-		
-		
+
+        $post = $newsItem['post'];
+        $meta = $newsItem['meta'];
+        $subjects = $newsItem['subjects'];
+        $authors = $newsItem['users'];
+        $photos = $newsItem['photo'];
+
+
+        // Check if something vital is missing after parsing
+        if($post == null && $meta == null && ($post['post_content'] == null || $post['post_title'] == null)){
+            debug('Something vital was not parsed: importing stopped.');
+            return;
+        }
+
+        debug("<h2>Insert/Update Post: </h2>");
+
 		// Sets date on WP_POST object, it supports GMT (UTC) and Non-GMT.
 		if(isset($meta['nml2_versionCreated'])){
-			debug("Dato Non-GMT" . DateParser::getNonGMT($meta['nml2_versionCreated']));
-			debug("Dato GMT" . DateParser::getGMTDatetime($meta['nml2_versionCreated']));
-			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']); 
+			$post['post_date'] = DateParser::getNonGMT($meta['nml2_versionCreated']);
 			$post['post_date_gmt'] = DateParser::getGMTDateTime($meta['nml2_versionCreated']);
 		}
 
-		
-		
+
+
 		// Sets author like the creator, for the single author support in WordPress, multi author support is handled in another method
 		$post['post_author'] = getCreator($authors); // null = Will be shown as default user in WP (Admin)
-		
-		
-		
-		
+
+
+        $existing_post = getPostByGUID($meta['nml2_guid']);
+        debug("<strong>Existing post: </strong>");
+        debug($existing_post);
+
 		// Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 		if(	$existing_post != null){
-			debug("<strong>Found post with ID: </strong> $post_id -> Just update existing");
+			debug('<strong>Found post with ID: </strong> $post_id -> Just update existing');
 			debug($existing_post);
 			
 			$version = $meta['nml2_version'];
@@ -226,41 +155,35 @@
 			$result = wp_insert_post( $post, true); // Creates new post
 			
 		}
-		
-		// The WP_Post is now either inserted, updated or failed. (See $result)
-		
-		
-		
-		// If POST_ID was returned & meta data was included
-		if(is_numeric($result) && $meta != null){
-			debug("<h4>Set metadata in Wordpress: </h4>");
-			insertPostMeta($result, $meta);
-			setPostCategories($result, $subjects, $meta['nml2_language']);
-			$post['ID'] = $result;
-			insertPhotos($result, $post, $photos);
-			
-			setHeader(201); // Created
-				
-		}
-		
-		// Wordpress returns post_id if successful, so a number can be used to confirm a successful post creation.
-		if( is_numeric($result) && $authors != null ) {
-			setAuthors($authors, $result); // Allows multiple author support. 
-		}
+
+
+
+
+
+        insertPostMeta($result, $meta);
+        setPostCategories($result, $subjects, $meta['nml2_language']);
+
+		insertPhotos($result, $post, $photos);
+        setAuthors($result, $authors); // Allows multiple author support.
+
+
+
+
+
+        debug("Returned from wordpress");
+        debug( $result);
 		
 		if($result == null){
 			setHeader(409); // Conflict (Existing copy with same version number and GUID)
-		}else if(!is_numeric($result)){
-			debug("Returned from wordpress");
-			debug( $result);
-			setHeader(304); // Not modified
 		}
-		
-		
-		
-		
-		return $result;
-		
+
+		if(is_numeric($result)){
+			setHeader(201); // Created
+		}
+        else {
+	        setHeader( 304 ); // Not modified
+        }
+
 	}
 	
 	/**
@@ -275,6 +198,9 @@
 	 */
 	function insertPhotos($post_id, $post, $photos){
 		debug("<h2>Insert Photos</h2>");
+		if(!is_numeric($post_id) || $post == null || $photos == null){
+			return;
+		}
 		$count = 0;
 		$firstUrl = null;
 		$setFeatureImage = true;
@@ -319,7 +245,7 @@
 				
 				
 		}
-		
+        $post['ID'] = $post_id; // Ensure that ID is set
 		$result = wp_update_post( $post, true);  // Creates a new revision, leaving two similar versions, only showing the newest.
 		
 		// Set feature image 
@@ -398,8 +324,11 @@
 	 * @author Michael Pande
 	 */
 	function insertPostMeta($post_id, $meta){
-		$unique = true; // True: No duplicate with matching Meta_key for post_id
-		
+		debug("<h4>Set metadata in Wordpress: </h4>");
+		if(!is_numeric($post_id) || $meta == null){
+			return;
+		}
+
 		foreach($meta as $key=>$val){
 			debug("<strong>Key:</strong> $key  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>Value:</strong> $val");
 			update_post_meta($post_id, $key, $val);
@@ -425,6 +354,11 @@
 		debug("<h2>setPostCategories</h2>");
 		debug("<strong>Language: </strong> $lang");
 		debug($subjects);
+
+		if(!is_numeric($post_id) || $subjects == null){
+			return;
+		}
+
 		$category_id = array();
 
 		
@@ -539,6 +473,7 @@
 	}
 
 
+
 	
 	
 	
@@ -552,10 +487,10 @@
 	function setHeader($event){
 		if($event != null){
 			if($event != 200 && $event != 201){
-				errorLogger::headerStatus($event); 
+				httpHeader::setHeader($event);
 				exitApi();
 			}
-			errorLogger::headerStatus($event); 
+			httpHeader::setHeader($event);
 			
 		}
 	}
@@ -563,10 +498,10 @@
 	
 	/**
 	 * Returns the creator of the $author array. Which will always be the first or null. (Return in the foreach).
-	 * This method is necessary, for 
+	 *
 	 *
 	 * @param $authors - array of authors (Creator $ Contributors)
-	 *  
+	 * @return Creator as string or null
 	 * @author Michael Pande
 	 */
 	function getCreator($authors){
@@ -597,9 +532,12 @@
 	 *  
 	 * @author Michael Pande
 	 */
-	function setAuthors($authors, $post_id){
+	function setAuthors($post_id, $authors){
 		debug("<strong>Set authors</strong>");
-		debug($authors);          
+		debug($authors);
+		if(!is_numeric($post_id) || $authors == null){
+			return;
+		}
 
 		$author_meta = "";
 		
@@ -653,20 +591,6 @@
 		return $result;
 	}
 	
-	
-	
-	/**
-	 * Gets content from uploaded file
-	 * @return File contents
-	 *
-	 * @author Michael Pande
-	 */
-	function fileUpload(){
-		if($_FILES["uploaded_file"]["tmp_name"] == null){
-			 return null;
-		}
-		return file_get_contents($_FILES["uploaded_file"]["tmp_name"]);	
-	}
 
 
 	/**
@@ -694,10 +618,20 @@
 		exit;
 	}
 
-	
-	
-	
-	
+
+    function authenticateUser(){
+        // Authentication, returns 401 if wrong API key
+        debug("<h3>Authentication</h3>");
+
+        if(!authentication()){
+            debug("Failed");
+            setHeader(401); // Unauthorized
+            exitApi();
+        }
+        debug("Successful");
+    }
+
+
 	/**
 	 * Authenticates and returns true if API key matches the key sent with HTTP_GET['key'].
 	 * 
@@ -706,7 +640,6 @@
 	 * @author Michael Pande
 	 */
 	function authentication(){
-		global $DEBUG;
 		
 		if (isset($_GET['key'])) {
 			$USER_KEY = $_GET['key'];
@@ -720,9 +653,24 @@
 	}
 
 	
-	
-	
-	
+	function setGlobalUserVariables(){
+        global $DEBUG, $UPDATE_OVERRIDE,$MANUAL_UPLOAD;
+
+        if(isset($_GET["debug"]) && $_GET["debug"] == true){
+            error_reporting(E_ALL);
+            ini_set('display_errors', 1);
+            $DEBUG = true;
+        }
+
+        if(isset($_GET["update_override"]) && $_GET["update_override"] == true) {
+            $UPDATE_OVERRIDE = true;
+        }
+
+        if(isset($_GET["manual"]) && $_GET["manual"] == true){
+            $MANUAL_UPLOAD = true;
+        }
+    }
+
 	
 
 	/**
@@ -765,45 +713,5 @@
 
 	}
 	
-	
-	
-	
-	
-	
-	/**
-	 * Returns useful debugging messages if &debug=true
-	 * echos strings and xs everything else.
-	 *
-	 * @param $str - String or item
-	 *
-	 * @author Michael Pande
-	 */
-	function debug($str){
-		global $DEBUG;
-		if($DEBUG){
-			if(is_string($str)){
-				echo "<p>".$str."</p>"; // Using <p> to create new lines. 
-			}else{
-				var_dump($str);
-			}
-		}
-	}
-
-	/**
-	 * @author Stefan Grunert
-	 */
-	function getRequestParams()
-	{
-		 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-			return $_GET;
-		 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-			return file_get_contents("php://input");
-		 } elseif ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-			return file_get_contents("php://input");
-		 } elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
-			return file_get_contents("php://input");
-		 }
-	}
 
 
-?>
