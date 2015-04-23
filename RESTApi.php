@@ -350,7 +350,7 @@
 	function setPostCategories($post_id, $subjects, $lang){
 		debug("<h2>setPostCategories</h2>");
 		debug("<strong>Language: </strong> $lang");
-		debug($subjects);
+
 
 		if(!is_numeric($post_id) || $subjects == null){
 			return;
@@ -493,8 +493,7 @@
 			$creator = createOrGetAuthor($nameVal);
 			
 			if($creator != null || $creator == ""){
-				debug("Creator:");
-				debug($creator);
+
 				return $creator;
 			}
 		}
@@ -535,15 +534,15 @@
 		debug($result);
 		
 	}
-	
-	/**
-	 * Creates or gets an author in the WordPress database. 
-	 *
-	 * @param $auth - author (Creator / Contributor)
-	 * @return $result - the result for author creation, retrieved user or a WP_error. 
-	 *
-	 * @author Michael Pande
-	 */
+
+    /**
+     * Creates or gets an author in the WordPress database.
+     *
+     * @param $auth - String - author (Creator / Contributor)
+     * @return wp_user - the result for author creation, retrieved user or a WP_error.
+     *
+     * @author Michael Pande
+     */
 	function createOrGetAuthor($auth){
 		
 		
@@ -556,17 +555,15 @@
 		
 		
 		if($author->ID != null){
-			debug("Found author! " . var_dump($author));
+			debug("Found author! Author ID: $author->ID");
 			return $author->ID;
 		}
-		// CREATE CATEGORY AND RETURN ID; wp_insert_category
+
 		$email = ($auth['user_email'] == null ? "" : $auth['user_email']);
 		$password = "";
 		
 		$result = wp_create_user ( $auth['user_login'], $password, $email );
-	  
-		debug("Result from creation of category: " . var_dump($result));
-		debug("Create or get Author" . get_cat_ID( $auth));
+
 		return $result;
 	}
 	
