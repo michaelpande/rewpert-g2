@@ -333,7 +333,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: contentMeta/slugline
 		*/
-		return $_xpath->query($_ns."contentMeta/".$_ns."slugline", $newsItem)->item(0)->nodeValue;
+		$name = $_xpath->query($_ns."contentMeta/".$_ns."slugline", $newsItem)->item(0);
+
+        return self::nodeListNotNull($name);
 	}
 
 	/**
@@ -395,11 +397,11 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: itemMeta/pubStatus/qcode-attribute
 		*/
-		$node = $_xpath->query($_ns."itemMeta/".$_ns."pubStatus/@qcode", $newsItem)->item(0)->nodeValue;
+		$pubStatus = $_xpath->query($_ns."itemMeta/".$_ns."pubStatus/@qcode", $newsItem)->item(0)->nodeValue;
 
-		if(strcmp($node->nodeValue, "stat:withheld") == 0) {
+		if($pubStatus == "stat:withheld") {
 			return 'pending';
-		} elseif (strcmp($node->nodeValue, "stat:canceled") == 0) {
+		} elseif ($pubStatus == "stat:canceled") {
 			return 'trash';
 		}
 
@@ -476,7 +478,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: @guid (find the guid attribute in the newsItem tag)
 		*/
-		return $_xpath->query("@guid", $newsItem)->item(0)->nodeValue;
+		$guid = $_xpath->query("@guid", $newsItem)->item(0);
+
+        return self::nodeListNotNull($guid);
 	}
 
 	/**
@@ -494,7 +498,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: @version (find the version attribute in the newsItem tag)
 		*/
-		return $_xpath->query("@version", $newsItem)->item(0)->nodeValue;
+		$version = $_xpath->query("@version", $newsItem)->item(0);
+
+        return self::nodeListNotNull($version);
 	}
 
 	/**
@@ -513,7 +519,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document
 		  Path without XML namespace: itemMeta/firstCreated
 		*/
-		return $_xpath->query($_ns."itemMeta/".$_ns."firstCreated", $newsItem)->item(0)->nodeValue;
+		$firstCreated = $_xpath->query($_ns."itemMeta/".$_ns."firstCreated", $newsItem)->item(0);
+
+        return self::nodeListNotNull($firstCreated);
 	}
 
 	/**
@@ -532,7 +540,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: itemMeta/versionCreated
 		*/
-		return $_xpath->query($_ns."itemMeta/".$_ns."versionCreated", $newsItem)->item(0)->nodeValue;
+		$versionCreated = $_xpath->query($_ns."itemMeta/".$_ns."versionCreated", $newsItem)->item(0);
+
+        return self::nodeListNotNull($versionCreated);
 	}
 
 	/**
@@ -551,7 +561,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: itemMeta/embargoed
 		*/
-		return $_xpath->query($_ns."itemMeta/".$_ns."embargoed", $newsItem)->item(0)->nodeValue;
+		$embargo = $_xpath->query($_ns."itemMeta/".$_ns."embargoed", $newsItem)->item(0);
+
+        return self::nodeListNotNull($embargo);
 	}
 
 	/**
@@ -568,7 +580,9 @@ class NewsItemParse {
 		global $_xpath;
 
 		//Path without XML namespace: newsMessage/header/sent
-		return $_xpath->query("//".$_ns."newsMessage/".$_ns."header/".$_ns."sent")->item(0)->nodeValue;
+		$sentDate = $_xpath->query("//".$_ns."newsMessage/".$_ns."header/".$_ns."sent")->item(0);
+
+        return self::nodeListNotNull($sentDate);
 	}
 
 	/**
@@ -585,9 +599,11 @@ class NewsItemParse {
 		global $_xpath;
 
 		/*Query path that continues from first query at the start of the document.
-		  Path without XML namespace: contentMeta/language/tag-attribute
+		  Path without XML namespace:4 contentMeta/language/tag-attribute
 		*/
-		return $_xpath->query($_ns."contentMeta/".$_ns."language/@tag", $newsItem)->item(0)->nodeValue;
+		$lang = $_xpath->query($_ns."contentMeta/".$_ns."language/@tag", $newsItem)->item(0);
+
+        return self::nodeListNotNull($lang);
 	}
 
 	/**
@@ -606,7 +622,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: rightsInfo/copyrightHolder/name
 		*/
-		return $_xpath->query($_ns."rightsInfo/".$_ns."copyrightHolder/".$_ns."name", $newsItem)->item(0)->nodeValue;
+		$copyrightHolder = $_xpath->query($_ns."rightsInfo/".$_ns."copyrightHolder/".$_ns."name", $newsItem)->item(0);
+
+        return self::nodeListNotNull($copyrightHolder);
 	}
 
 	/**
@@ -625,7 +643,9 @@ class NewsItemParse {
 		/*Query path that continues from first query at the start of the document.
 		  Path without XML namespace: rightsInfo/copyrightNotice
 		*/
-		return $_xpath->query($_ns."rightsInfo/".$_ns."copyrightNotice", $newsItem)->item(0)->nodeValue;
+		$copyrightNotice = $_xpath->query($_ns."rightsInfo/".$_ns."copyrightNotice", $newsItem)->item(0);
+
+        return self::nodeListNotNull($copyrightNotice);
 	}
 
 	/**
@@ -683,7 +703,7 @@ class NewsItemParse {
 		/*Query path that continues from the query in function getCreator/getContributor
 		  Path without XML namespace: name
 		*/
-		$userName = $_xpath->query($_ns."name", $cTag)->item(0)->nodeValue;
+		$userName = $_xpath->query($_ns."name", $cTag)->item(0);
 
 		//If noe name tag is present, enter this part of the code
 		if($userName == null) {
@@ -691,11 +711,15 @@ class NewsItemParse {
 			/*Query path that continues from the query in function getCreator/getContributor
 			  Path without XML namespace: literal-attribute
 			*/
-			$userName  = $_xpath->query("@literal", $cTag)->item(0)->nodeValue;
+			$userName  = $_xpath->query("@literal", $cTag)->item(0);
+
+            if($userName == null) {
+                return null;
+            }
+
 		}
 
-
-		return $userName;
+		return $userName->nodeValue;
 	}
 
 	/**
@@ -713,7 +737,9 @@ class NewsItemParse {
 		/*Query path that continues from the query in function getCreator/getContributor
 		  Path without XML namespace: role-attribute
 		*/
-		return $_xpath->query("@role", $cTag)->item(0)->nodeValue;
+		$userDescription = $_xpath->query("@role", $cTag)->item(0);
+
+        return self::nodeListNotNull($userDescription);
 	}
 
 	/**
@@ -729,7 +755,9 @@ class NewsItemParse {
 		global $_ns;
 		global $_xpath;
 
-		return $_xpath->query($_ns."personDetails/".$_ns."contactInfo/".$_ns."email", $cTag)->item(0)->nodeValue;
+		$email = $_xpath->query($_ns."personDetails/".$_ns."contactInfo/".$_ns."email", $cTag)->item(0);
+
+        return self::nodeListNotNull($email);
 	}
 
 	/**
@@ -744,7 +772,9 @@ class NewsItemParse {
 	private static function getUserQcode($cTag) {
 		global $_xpath;
 
-		return $_xpath->query("@qcode", $cTag)->item(0)->nodeValue;
+		$userQcode = $_xpath->query("@qcode", $cTag)->item(0);
+
+        return self::nodeListNotNull($userQcode);
 	}
 
 	/**
@@ -762,7 +792,9 @@ class NewsItemParse {
 		/*Query path that continus from the query in function getCreator/getContributor
 		  Path without XML namespace: uri-attribute
 		*/
-		return $_xpath->query("@uri", $cTag)->item(0)->nodeValue;
+		$uri = $_xpath->query("@uri", $cTag)->item(0);
+
+        return self::nodeListNotNull($uri);
 	}
 
 	/**
@@ -795,8 +827,10 @@ class NewsItemParse {
 				'broader' => self::getSubjectSameAsOrBroder($node, 'broader') //array, an array containing all subjects broader tags
 			);
 
-			array_push($subjects, $subject);
+            array_push($subjects, $subject);
 		}
+
+
 
 		return $subjects;
 	}
@@ -816,7 +850,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
 		  Path without XML namespace: qcode-attribute
 		*/
-		return $_xpath->query("@qcode", $subjectTag)->item(0)->nodeValue;
+		$qcode = $_xpath->query("@qcode", $subjectTag)->item(0);
+
+        return self::nodeListNotNull($qcode);
 	}
 
 	/**
@@ -868,9 +904,11 @@ class NewsItemParse {
 		global $_xpath;
 
 		/*This XPath query is a subquery from the query in the method getSubjectName
-		  Path without XML namespace: lang-attribute
+		  Path without XML namespace:4 lang-attribute
 		*/
-		return $_xpath->query("@xml:lang", $nameTag)->item(0)->nodeValue;
+		$subjectLang = $_xpath->query("@xml:lang", $nameTag)->item(0);
+
+        return self::nodeListNotNull($subjectLang);
 	}
 
 	/**
@@ -887,7 +925,9 @@ class NewsItemParse {
 		 /*This XPath query is a subquery from the query in the method getSubjectName
 		  Path without XML namespace: role-attribute
 		*/
-		return $_xpath->query("@role", $nameTag)->item(0)->nodeValue;
+		$role = $_xpath->query("@role", $nameTag)->item(0);
+
+        return self::nodeListNotNull($role);
 	}
 
 	/**
@@ -905,7 +945,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
 		  Path without XML namespace: type-attribute
 		*/
-		return $_xpath->query("@type", $subjectTag)->item(0)->nodeValue;
+		$type = $_xpath->query("@type", $subjectTag)->item(0);
+
+        return self::nodeListNotNull($type);
 	}
 
 	/**
@@ -923,7 +965,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
 		  Path without XML namespace: type-attribute
 		*/
-		return $_xpath->query("@uri", $subjectTag)->item(0)->nodeValue;
+		$tag = $_xpath->query("@uri", $subjectTag)->item(0);
+
+        return self::nodeListNotNull($tag);
 	}
 
     /**
@@ -942,11 +986,8 @@ class NewsItemParse {
 
 		$sameAsArray = array( );
 
-		if ($queryDecision == 'sameAs') {
-			$nodelist = $_xpath->query($_ns."sameAs", $subjectTag);
-		} else {
-			$nodelist = $_xpath->query($_ns."broader", $subjectTag);
-		}
+		$nodelist = $_xpath->query($_ns.$queryDecision, $subjectTag);
+
 
 		//This loop creates an array containing information about each subject
 		foreach($nodelist as $node) {
@@ -992,7 +1033,7 @@ class NewsItemParse {
 				return $returnArray;
 			}
 
-			for($i = 0; $i < count($returnArray); $i++) {
+			for($i = 0; $i < count($returnArray) - 1; $i++) {
 				if($returnArray[$i]['meta']['nml2_guid'] == $guid) {
 					$photo = array(
 					'href' 		  => self::getPhotoHref($node), //string, the source of the image
@@ -1068,7 +1109,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: href-attribute
 		*/
-		return $_xpath->query("@href", $remoteContent)->item(0)->nodeValue;
+		$href = $_xpath->query("@href", $remoteContent)->item(0);
+
+        return self::nodeListNotNull($href);
 	}
 
 	/**
@@ -1086,7 +1129,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: size-attribute
 		*/
-		return $_xpath->query("@size", $remoteContent)->item(0)->nodeValue;
+		$size = $_xpath->query("@size", $remoteContent)->item(0);
+
+        return self::nodeListNotNull($size);
 	}
 
 	/**
@@ -1104,7 +1149,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: width-attribute
 		*/
-		return $_xpath->query("@width", $remoteContent)->item(0)->nodeValue;
+		$width = $_xpath->query("@width", $remoteContent)->item(0);
+
+        return self::nodeListNotNull($width);
 	}
 
 	/**
@@ -1122,7 +1169,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: height-attribute
 		*/
-		return $_xpath->query("@height", $remoteContent)->item(0)->nodeValue;
+		$hight =  $_xpath->query("@height", $remoteContent)->item(0);
+
+        return self::nodeListNotNull($hight);
 	}
 
 	/**
@@ -1140,7 +1189,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: contenttype-attribute
 		*/
-		return $_xpath->query("@contenttype", $remoteContent)->item(0)->nodeValue;
+		$contenttype = $_xpath->query("@contenttype", $remoteContent)->item(0);
+
+        return self::nodeListNotNull($contenttype);
 	}
 
 	/**
@@ -1158,7 +1209,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: colourspace-attribute
 		*/
-		return $_xpath->query("@colourspace", $remoteContent)->item(0)->nodeValue;
+		$coloyrspace = $_xpath->query("@colourspace", $remoteContent)->item(0);
+
+        return self::nodeListNotNull($coloyrspace);
 	}
 
 	/**
@@ -1176,7 +1229,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: rendition-attribute
 		*/
-		return $_xpath->query("@rendition", $remoteContent)->item(0)->nodeValue;
+		$rendition = $_xpath->query("@rendition", $remoteContent)->item(0);
+
+        return self::nodeListNotNull($rendition);
 	}
 
 	/**
@@ -1195,7 +1250,9 @@ class NewsItemParse {
 		/*This XPath query is a subquery from the query in the method createPhotoArray
 		  Path without XML namespace: contentMeta/description
 		*/
-		return $_xpath->query($_ns."contentMeta/".$_ns."description", $newsItem)->item(0)->nodeValue;
+		$description = $_xpath->query($_ns."contentMeta/".$_ns."description", $newsItem)->item(0);
+
+        return self::nodeListNotNull($description);
 	}
 
 	/**
@@ -1251,5 +1308,13 @@ class NewsItemParse {
 
 		return 200;
 	}
+
+    private static function nodeListNotNull($nodeList) {
+        if($nodeList != null) {
+            return $nodeList->nodeValue;
+        }
+
+        return null;
+    }
 
 }
