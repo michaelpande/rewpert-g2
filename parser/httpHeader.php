@@ -4,6 +4,7 @@ class httpHeader{
 
     /**
      * @param $statusCode Sets the HTTP header information.
+     * @author Michael Pande, Diego Alonso Pasten Bahamondes
      */
 		public static function setHeader($statusCode) {
 

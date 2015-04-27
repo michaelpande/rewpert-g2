@@ -370,31 +370,34 @@
 			}
 			return false;
 		}
-		
-		/**
-		 * Returns input safe for database queries.
-		 * 
-		 * @param $str - The string to be used in query 
-		 * @return $str - Database safe string
-		 *
-		 * @author Michael Pande
-		 */
-		private function input($str){
+
+
+        /**
+         * Returns input safe for database queries.
+         *
+         * @param $str - The string to be used in query
+         * @return mixed|string - Database safe string
+         *
+         * @author Michael Pande
+         */
+        private function input($str){
 			$str = str_replace("'","''",$str); // Replace the one occurence when the test fails due to ', SQLite supports '' for the character '.
 			$str = htmlspecialchars($str);
 			return $str;
 			
 		}
-		
-		/**
-		 * Returns output from database to restore after using htmlspecialchars.
-		 * 
-		 * @param $str - The string returned from the database
-		 * @return $str - Restored string
-		 *
-		 * @author Michael Pande
-		 */
-		private function output($str){
+
+
+        /**
+         * Returns output from database to restore after using htmlspecialchars.
+         *
+         *
+         * @param $str  - The string returned from the database
+         * @return string  - Restored string
+         *
+         * @author Michael Pande
+         */
+        private function output($str){
 			return htmlspecialchars_decode($str);
 		}
 		
@@ -528,4 +531,3 @@
 		
 	
 
-?>

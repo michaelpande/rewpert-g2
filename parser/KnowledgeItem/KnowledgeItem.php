@@ -13,7 +13,7 @@ class KnowledgeItemParse {
 	
 	
 		/**
-		 * Tests the retrieval of qcodes from KnowledgeItems
+		 * Tests the retrieval of QCodes from KnowledgeItems
 		 * 
 		 * @author Michael Pande
 		 */
@@ -28,9 +28,9 @@ class KnowledgeItemParse {
 		}
 
 		/**
-		 *  Accepts a NewsML-G2 KnowledgeItem and retrieves the concepts & qcodes. 
+		 *  Accepts a NewsML-G2 KnowledgeItem and retrieves the concepts & QCodes.
 		 * 
-		 * @return Array of concepts & qcodes or null
+		 * @return Array of concepts & QCodes or null
 		 *
 		 * @author Michael Pande
 		 */
@@ -56,22 +56,19 @@ class KnowledgeItemParse {
 	
 		
 		/**
-		 * Accepts a DomXPATH object from a NewsML-G2 KnowledgeItem and retrieves the concepts & qcodes. 
+		 * Accepts a DomXPATH object from a NewsML-G2 KnowledgeItem and retrieves the concepts & QCodes.
 		 * 
-		 * @return Array of concepts & qcodes
+		 * @return Array of concepts & QCodes
 		 *
 		 * @author Michael Pande
 		 */
 		private static function getSubjects($xpath) {
 			
 			$subjects = array();
-			$subjectName;
-			$subjectDefinition;
-			$subjectQCode;
-			$subjectMedtop;
-			$nodelist = $xpath->query("//knowledgeItem:concept");
+
+			$nodeList = $xpath->query("//knowledgeItem:concept");
 			
-			foreach($nodelist as $node) {
+			foreach($nodeList as $node) {
 			
 				$subjectName = null;
 				$subjectDescription = null;
@@ -186,8 +183,8 @@ class KnowledgeItemParse {
 		}
 		
 		$file = ltrim($file);
-		//Checks if $file is file or text
-		if(is_file($file)) {
+
+		if(is_file($file)) {    //Checks if $file is file or text
 			$doc->load($file);
 		}
 		else {
