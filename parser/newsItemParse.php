@@ -133,7 +133,17 @@ class NewsItemParse
         global $_addToArray;
         global $_xpath;
 
+        $returnArray = array(
+            'status_code' => 200 //int, the status code automatically set to 200
+        );
+
         $_addToArray = true;
+
+        if($xml == null) {
+            $returnArray['status_code'] = 400;
+
+            return $returnArray;
+        }
 
         self::createXpath($xml);
 
@@ -142,13 +152,8 @@ class NewsItemParse
         */
         $newsItemList = $_xpath->query("//" . $_ns . "newsItem");
 
-        $returnArray = array(
-            'status_code' => 200 //int, the status code automatically set to 200
-        );
-
         //Files the given array for each newsItem
         foreach ($newsItemList as $newsItem) {
-            self::quoteNotAddToArray($newsItem);
 
 
             $newsItemArray = array(
@@ -212,7 +217,6 @@ class NewsItemParse
         //XML namescpaces
         $_xpath->registerNamespace('html', "http://www.w3.org/1999/xhtml");
         $_xpath->registerNamespace('nitf', "http://iptc.org/std/NITF/2006-10-18/");
-        $_xpath->registerNamespace('vgExtension', "http://www.vg.no");
 
         //Test to see if $uri if not equal to null
         if ($uri != null) {
@@ -1343,23 +1347,17 @@ class NewsItemParse
         }
 
         if (count($returnArray) == 0) {
-            echo "Jeg gikk hit 1";
             return 400;
         }
 
         for ($i = 0; $i < count($returnArray) - 1; $i++) {
-            var_dump($i);
             if ($returnArray[$i]['post']['post_content'] == null) {
-
                 return 400;
             } else if ($returnArray[$i]['post']['post_title'] == null) {
-                echo "Jeg gikk hit 2";
                 return 400;
             } else if ($returnArray[$i]['meta']['nml2_guid'] == null) {
-                echo "Jeg gikk hit 3";
                 return 400;
             } else if ($returnArray[$i]['meta']['nml2_version'] == null) {
-                echo "Jeg gikk hit 4";
                 return 400;
             }
         }
