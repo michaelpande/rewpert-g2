@@ -1,5 +1,6 @@
 <?php
 
+
 	/**
 	 * Returns useful debugging messages if &debug=true
 	 * echos strings and xs everything else.
@@ -12,14 +13,17 @@
 		global $DEBUG;
 		if($DEBUG){
 			if(is_string($str)){
-				echo "<p>".$str."</p>"; // Using <p> to create new lines. 
+				echo "<p>".$str."</p>"; // Using <p> to create new lines.
 			}else{
 				var_dump($str);
 			}
 		}
 	}
 
-    function getUserInput(){
+/**
+ * @return File|null|string
+ */
+function getUserInput(){
 
         // Checks request method, returns 400 if not HTTP POST
         if($_SERVER['REQUEST_METHOD'] != 'POST'){
@@ -42,10 +46,11 @@
     }
 
 
-	/**
-	 * @author Stefan Grunert
-	 */
-	function getRequestParams()
+/**
+ * @return String - Contains the parameters from the user
+ * @author Stefan Grunert (Aptoma - Dr. Publish)
+ */
+function getRequestParams()
 	{
 		 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 			return $_GET;

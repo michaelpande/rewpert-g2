@@ -1,7 +1,4 @@
 <?php
-
-
-
 require_once('Database/SimpleStorage.php');
 require_once('KnowledgeItem/KnowledgeItem.php');
 
@@ -9,15 +6,14 @@ require_once('KnowledgeItem/KnowledgeItem.php');
 
 
 /**
-* Retrieves and stores NewsCodes (QCodes) from the IPTC Controlled Vocabulary (CV) for NewsCodes
-
+* Retrieves and stores NewsCodes (QCodes) from KnowledgeItems
 *
 * @author Michael Pande
 */
 class QCodes{
 
 	/**
-	 * Method for testing functionality, and debugging.
+	 * Method for testing functionality, and debugging
 	 *
 	 * @author Michael Pande
 	 */
@@ -27,13 +23,20 @@ class QCodes{
 		
 		QCodes::updatePluginDB("KnowledgeItem/test_subjectcode-en.xml");
 		QCodes::updatePluginDB("KnowledgeItem/test_mediatopic.xml");
-		//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB"); // Max 10/hour 
+		//QCodes::update("http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB"); // Max 10/hour (IPTC Controlled Vocabulary)
 		
 	
 	}
 
-	// Returns the string best matching the NewsCode in given language.
-	public static function getSubject($qcode, $lang){
+
+    /**
+     *  Returns the string best matching the QCode in given language.
+     * @param $qcode
+     * @param $lang
+     * @return mixed
+     * @author Michael Pande
+     */
+    public static function getSubject($qcode, $lang){
 		$lang = ($lang == null) ? "" : $lang; // Guarantees a set value.
 		$qcode = ($qcode == null) ? "" : $qcode; // Guarantees a set value.
 
@@ -41,9 +44,12 @@ class QCodes{
 		return unserialize($db->get($qcode,$lang));
 
 	}	
-	
-	// Removes all qcodes with same language and qcode from database as given KnowledgeItem.
-	public static function remove($file){
+
+    /**
+     * Removes all QCodes with same language and QCode from database as given KnowledgeItem.
+     * @param $file
+     */
+    public static function remove($file){
 		$subjects = KnowledgeItemParse::getQCodes($file);
 		
 		
@@ -54,31 +60,44 @@ class QCodes{
 		}
 		$db->execute();
 		
-	}	
-		
-		
-	public static function setSubject($qcode, $lang, $value){
-		$lang = ($lang == null) ? "" : $lang; // Guarantees a set value.
-		$qcode = ($qcode == null) ? "" : $qcode; // Guarantees a set value.
-		$value = ($value == null) ? "" : $value; // Guarantees a set value.
+	}
+
+
+    /**
+     * Set subject value with given language and QCode
+     *
+     * @param $qcode
+     * @param $lang
+     * @param $value
+     */
+    public static function setSubject($qcode, $lang, $value){
+		$lang = ($lang == null) ? "" : $lang;       // Guarantees a set value.
+		$qcode = ($qcode == null) ? "" : $qcode;    // Guarantees a set value.
+		$value = ($value == null) ? "" : $value;    // Guarantees a set value.
 		$db = new SimpleStorage();
 		$db->update($qcode, $lang,serialize($value));
 	}	
 		
-	// Update qcodes by URL or File	
-	public static function updatePluginDB($file){
+
+    /**
+     * Update QCodes by URL or File
+     *
+     * @param $file - file or url
+     * @return bool
+     */
+    public static function updatePluginDB($file){
 		
 		$subjects = KnowledgeItemParse::getQCodes($file);
 
 		if($subjects == null){
 			return false;
 		}
-		// Updates DB with the new QCodes. 
-		$db = new SimpleStorage();
+
+		$db = new SimpleStorage(); // Updates DB with the new QCodes.
 
 		$db->prepare(true);
-		// Update/Insert all values
-		foreach($subjects as $value){
+
+		foreach($subjects as $value){   // Update/Insert all values
 			$db->update($value['qcode'],$value['lang'], serialize($value));
 			
 		}
@@ -91,21 +110,9 @@ class QCodes{
 		
 		
 	}
-		
-		
-		
-	
-	
-	
-	
-	// Update newscodes
-	
-	
+
 	
 	
 	
 	
 }	
-	
-
-?>

@@ -1,5 +1,10 @@
 <?php
 
+
+    /**
+     * @Author Michael Pande
+     */
+
 	if(isset($_POST["NewKey"])){
 		updateAPIkey();
 	}else{
@@ -81,7 +86,7 @@
 	};
 	</script>
     
-	<h1>RESTful NewsML-G2</h1><br>
+	<h1>Rewpert-G2</h1><br>
 	
 	
 	<h2>Usage</h2>
@@ -107,13 +112,12 @@
 	
 	
 	<div class="nml2-container">
-	<h2>Manual Upload</h2>
-	<p><strong>Supports: </strong>NewsItems & KnowledgeItems. </p>
-	<p><strong>Update: </strong>It overwrites existing post with GUID, and ignores version.</p>
-		<p><strong>IPTC CV Subjects: </strong>http://cv.iptc.org/newscodes/subjectcode?format=g2ki&lang=en-GB (Max 10/day)</p>
-	<p><strong>IPTC CV Mediatopics: </strong>http://cv.iptc.org/newscodes/mediatopic?format=g2ki&lang=en-GB (Max 10/day)</p>
+	<h2>Manual Upload</h2><br>
+	<p class="indent"><strong>Supports: </strong>NewsItems & KnowledgeItems. </p>
+	<p class="indent"><strong>Update: </strong>It overwrites existing post with GUID, and ignores version.</p>
+<br>
 	
-	<form id="manual" action='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>&manual=true&update_override=true' enctype="multipart/form-data" method="post">
+	<form class="indent" id="manual" action='<?php echo getPathToPluginDir();?>RESTApi.php?key=<?php echo getAPIkey(); ?>&manual=true&update_override=true' enctype="multipart/form-data" method="post">
 		
 		<input type="file" name="uploaded_file" id="uploaded_file" ><br><br>
 		<input type="submit" id="startImport" value="Start import" name="submit" >
@@ -125,13 +129,16 @@
 <h2>Quick reference</h2>
 		<div class="nml2-right">
 			<h4>Documentation</h4>
+
 			<a href="http://demo-nmlg2wp.rhcloud.com/documentation.php">Documentation</a><br>
 			<a href="https://bitbucket.org/michaelpande/newsml-g2-restful-wordpress-import">Source code</a><br>
 		
 		</div>
 		<div class="nml2-right">
 			<h4>Links</h4>
-			<a href="http://www.iptc.org/site/News_Exchange_Formats/NewsML-G2/">IPTC NewsML-G2</a><br>
+            <a href="http://demo-nmlg2wp.rhcloud.com">Plugin page</a><br>
+
+            <a href="http://www.iptc.org/site/News_Exchange_Formats/NewsML-G2/">IPTC NewsML-G2</a><br>
 			
 			
 		</div>
@@ -143,12 +150,7 @@
 		<li>The API key is generated with openssl_random_pseudo_bytes(32)</li>
 		<li>The API key is stored in the Wordpress Database </li>
 	</ul>
-		<!--<h2>Examples:</h2>-->
-	<br>
-	<pre>
-		
-	</pre>
-	<br>
+
 	
 	
 	
