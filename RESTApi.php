@@ -20,19 +20,23 @@
 
 require('parser/newsItemParse.php');      // Parses NewsML-G2 NewsItems
 require('parser/DateParser.php');          // Parses Date strings
-require('parser/httpHeader.php');          // Sets HTTP status codes
 require('parser/QCodes.php');              // Handles storage and retrieval of QCodes and their values.
 require('functions/functions.php');
+require('functions/httpHeader.php');          // Sets HTTP status codes
 require('../../../wp-load.php');          // Potentially creates bugs. Necessary to access methods in the WordPress core from outside.
 
 
-ob_start();                     // Turns output buffering on, making it possible to modify header information (status codes etc) after echoing, printing and var_dumping.
+//ob_start();                     // Turns output buffering on, making it possible to modify header information (status codes etc) after echoing, printing and var_dumping.
 
 $DEBUG = false;                 // Return debug information or not
 $UPDATE_OVERRIDE = false;       // True = Ignore version number in NewsItem and do update anyways.
 $MANUAL_UPLOAD = false;         // If the import is done manually
+$OUTPUT = new HTMLView();       // Create HTML view for all the output
 
 setGlobalUserVariables();       // Sets the global variables above with user values
+
+$OUTPUT->setTitle("Rewpert-G2 Output");
+$OUTPUT->setDescription("This output is here to help debugging.");
 
 authenticateUser();             // Stops the entire process if key is invalid
 
@@ -40,22 +44,22 @@ $userInput = getUserInput();    // Will stop the entire process if invalid reque
 
 
 $containedKnowledgeItems = QCodes::updatePluginDB($userInput);   // If $userInput has KnowledgeItem: Updates the plugin specific QCodes database with QCodes
-debug("<h3>Returned from KnowledgeItemParser.php: </h3>");
-debug($containedKnowledgeItems);
+$OUTPUT->newHeading("Returned from KnowledgeItemParser.php");
+$OUTPUT->appendParagraph($containedKnowledgeItems);
 
 
 $parsedXML = newsItemParse::parseNewsML($userInput);              // Gets a multidimensional array in return with potential NewsItems.
-debug("<h3>Returned from NewsItemParse.php: </h3>");
-debug($parsedXML);
+$OUTPUT->newHeading("Returned from NewsItemParse.php:");
+$OUTPUT->appendParagraph($parsedXML);
 
 
 if ($parsedXML['status_code'] != 200) {       // Checks if something went wrong during parsing
 
     if ($containedKnowledgeItems) {
-        debug("KnowledgeItem was imported, setting http header 201");
+        $OUTPUT->appendParagraph("KnowledgeItem was imported, setting http header 201");
         httpHeader::setHeader(201);
     } else {
-        debug("Did not contain KnowledgeItem, so use http header from NewsItemParser");
+        $OUTPUT->appendParagraph("Did not contain KnowledgeItem, so use http header from NewsItemParser");
         httpHeader::setHeader($parsedXML['status_code']);
 
     }
@@ -79,7 +83,7 @@ exitAPI();
 /**
  * Inserts:
  *    NewsItem (post),
-*     NML-G2 meta data,
+ *     NML-G2 meta data,
  *    Keywords(tags),
  *    Subjects(categories),
  *    Creators / Contributors (authors)
@@ -90,8 +94,8 @@ exitAPI();
  */
 function insertNewsItem($newsItem)
 {
-    global $UPDATE_OVERRIDE;
-    debug("<h2>Insert/Update Post: </h2>");
+    global $UPDATE_OVERRIDE, $OUTPUT;
+    $OUTPUT->newHeading("Insert or Update Post:");
 
 
     $post = $newsItem['post'];
@@ -101,9 +105,9 @@ function insertNewsItem($newsItem)
     $photos = $newsItem['photo'];
     $result = null;                             // A numeric POST_ID or a WP_ERROR object
 
-    debug($post);
+    $OUTPUT->appendParagraph($post);
     if ($post == null || $meta == null || ($post['post_content'] == null && $post['post_title'] == null)) {
-        debug('Something vital was not parsed: importing stopped.');
+        $OUTPUT->appendParagraph('Something vital was not parsed: importing stopped.');
         httpHeader::setHeader(400);
         exitAPI();
     }
@@ -120,16 +124,21 @@ function insertNewsItem($newsItem)
 
 
     if ($existing_post == null) {
-        debug('<p>Did not find previous NewsItem (WP_POST) with same GUID, inserting the new one.</p>');
+        $OUTPUT->appendParagraph('Did not find previous NewsItem (WP_POST) with same GUID, inserting the new one.');
         $result = wp_insert_post($post, true); // Creates new post
     } // Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
+
+
     else if ($existing_post != null && ($UPDATE_OVERRIDE || $meta['nml2_version'] > get_post_meta($existing_post->ID, 'nml2_version')[0])) {   // Array Dereferencing (Requires PHP version >= 5.4)
-        debug('<p>Found NewsItem (WP_POST) with same GUID, starting update.</p>');
+        $OUTPUT->appendParagraph('Found NewsItem (WP_POST) with same GUID, starting update.');
         $post['ID'] = $existing_post->ID;
         $result = wp_update_post($post, true);  // Creates a new revision, leaving two similar versions in wp_database, only showing the newest. Both are accessible through the WP admin interface.
-    } // Found post, but not newer version
+    }
+
+
+    // Found post, but not newer version
     else if ($existing_post != null) {
-        debug("<p>Found NewsItem (WP_POST) with same GUID, but the NewsML-G2 document had a version number lower or equal to the existing post: ");
+        $OUTPUT->appendParagraph('Found NewsItem (WP_POST) with same GUID, but the NewsML-G2 document had a version number lower or equal to the existing post:');
     }
 
 
@@ -140,8 +149,8 @@ function insertNewsItem($newsItem)
     setAuthors($result, $authors); // Allows multiple author support.
 
 
-    debug("Returned from wordpress");
-    debug($result);
+    $OUTPUT->appendSubheading("Returned from WordPress");
+    $OUTPUT->appendParagraph($result);
 
     if ($result == null) {                // Conflict (Existing copy with same version number and GUID)
         httpHeader::setHeader(409);
@@ -168,7 +177,8 @@ function insertNewsItem($newsItem)
  */
 function insertPhotos($post_id, $post, $photos)
 {
-    debug("<h2>Insert Photos</h2>");
+    global $OUTPUT;
+    $OUTPUT->appendSubheading("Inserting Photos");
 
     if (!is_numeric($post_id) || $post == null || $photos == null) {
         return;
@@ -181,19 +191,18 @@ function insertPhotos($post_id, $post, $photos)
         if ($val["href"] != null) {
             $count++;
             $image = wp_get_image_editor($val["href"]);
-            debug("<strong>Check for WP_ERROR</strong>");
+
             if (!is_wp_error($image)) {
-                debug("No error");
+
                 $imgUrl = '/images/' . $post_id . '/' . $count . '.jpg';
-                debug("ImageUrl: " . $imgUrl);
+                $OUTPUT->appendParagraph("ImageUrl: " . $imgUrl);
 
                 $orig_filename = basename($val["href"]);
-                debug("Original filename: " . $orig_filename);
+                $OUTPUT->appendParagraph("Original filename: " . $orig_filename);
                 $image->save("." . $imgUrl);
 
 
-                $pattern = "/(src=)[\"'](.*)" . $orig_filename . "[\"']/";
-                debug("Pattern: " . $pattern);
+                $pattern = "/(src=)[\"\'](.*)" . $orig_filename . "[\"\']/";
 
                 $new_url = "src=\"" . getPathToPluginDir() . $imgUrl . "\"";
 
@@ -206,11 +215,10 @@ function insertPhotos($post_id, $post, $photos)
 
                 $post['post_content'] = preg_replace($pattern, $new_url, $post['post_content'], -1);
 
-
-                debug($post);
-                debug($image);
+                $OUTPUT->appendParagraph("WP_Post after replacing inline image URLs with new URLs:");
+                $OUTPUT->appendParagraph($post);
             } else {
-                debug("Error");
+                $OUTPUT->appendParagraph("Error");
             }
 
         }
@@ -227,8 +235,8 @@ function insertPhotos($post_id, $post, $photos)
 
     }
 
-    debug("<strong>Result from WP_UPDATE:</strong>");
-    debug($result);
+    $OUTPUT->appendParagraph("Result from WP_UPDATE:");
+    $OUTPUT->appendParagraph($result);
 
 }
 
@@ -246,7 +254,9 @@ function insertPhotos($post_id, $post, $photos)
  */
 function setFeatureImage($post_id, $url)
 {
+    global $OUTPUT;
 
+    $OUTPUT->appendParagraph('Set feature image');
     // only need these if performing outside of admin environment
     require_once(ABSPATH . 'wp-admin/includes/media.php');
     require_once(ABSPATH . 'wp-admin/includes/file.php');
@@ -298,13 +308,14 @@ function setFeatureImage($post_id, $url)
  */
 function insertPostMeta($post_id, $meta)
 {
-    debug("<br><h4>Set metadata for the WP_POST with ID: ($post_id) in Wordpress: </h4>");
+    global $OUTPUT;
+    $OUTPUT->appendSubheading("Setting metadata");
     if (!isset($post_id) || !isset($meta) || !is_numeric($post_id) || $meta == null) {
         return;
     }
 
     foreach ($meta as $key => $val) {
-        debug("<strong>Key:</strong> $key  <strong style='padding-left:5em''>Value:</strong> $val");
+        $OUTPUT->appendParagraph("$key : $val");
         update_post_meta($post_id, $key, $val);
 
     }
@@ -325,8 +336,10 @@ function insertPostMeta($post_id, $meta)
  */
 function setPostCategories($post_id, $subjects, $lang)
 {
-    debug("<h2>setPostCategories</h2>");
-    debug("<strong>Language: </strong> $lang");
+    global $OUTPUT;
+
+    $OUTPUT->appendSubheading("Setting post categories");
+    $OUTPUT->appendParagraph("Current language:  $lang");
 
 
     if (!is_numeric($post_id) || $subjects == null) {
@@ -339,7 +352,7 @@ function setPostCategories($post_id, $subjects, $lang)
     foreach ($subjects as $key => $subject) {
 
         // Have to find match on language
-        debug($subject);
+        $OUTPUT->appendParagraph($subject);
         foreach ($subject['name'] as $nameKey => $nameVal) {
             $id = null;
 
@@ -347,13 +360,13 @@ function setPostCategories($post_id, $subjects, $lang)
             if ($nameVal['lang'] == $lang || $nameVal['lang'] == null) {
 
                 // Will use 'name' if set
-                debug("Lang is $lang");
+                $OUTPUT->appendParagraph("Lang is $lang");
                 if ($nameVal['text'] != null && $nameVal['role'] != "nrol:mnemonic") {
-                    debug("Text and role is OK.");
+                    $OUTPUT->appendParagraph("Text and role is OK.");
                     QCodes::setSubject($subject['qcode'], $lang, $nameVal['text']);
                     $id = createOrGetCategory($nameVal['text']);
                 } else {
-                    debug("Checking for existing category..");
+                    $OUTPUT->appendParagraph("Checking for existing category..");
                     $result = QCodes::getSubject($subject['qcode'], $lang);
                     if ($result != null) {
                         $id = createOrGetCategory($result['name']);
@@ -361,7 +374,7 @@ function setPostCategories($post_id, $subjects, $lang)
                 }
 
             } else {
-                debug("GET SUBJECT: " . $subject['qcode'] . ", $lang");
+                $OUTPUT->appendParagraph("GET SUBJECT: " . $subject['qcode'] . ", $lang");
                 $id = createOrGetCategory(QCodes::getSubject($subject['qcode'], $lang));
             }
 
@@ -375,9 +388,9 @@ function setPostCategories($post_id, $subjects, $lang)
         }
 
         if ($id == null) {
-            debug("GET SUBJECT: " . $subject['qcode'] . ", $lang");
+            $OUTPUT->appendParagraph("GET SUBJECT: " . $subject['qcode'] . ", $lang");
             $result = QCodes::getSubject($subject['qcode'], $lang);
-            debug($result);
+            $OUTPUT->appendParagraph($result);
             if ($result != null) {
                 $id = createOrGetCategory($result['name']);
                 array_push($category_id, $id);
@@ -389,8 +402,8 @@ function setPostCategories($post_id, $subjects, $lang)
         createOrGetCategory($subject);
 
     }
-    debug(var_dump($category_id));
-    debug(var_dump($post_id));
+    $OUTPUT->appendParagraph($category_id);
+    $OUTPUT->appendParagraph($post_id);
     wp_set_post_categories($post_id, $category_id, false);
 }
 
@@ -401,6 +414,7 @@ function setPostCategories($post_id, $subjects, $lang)
  */
 function createOrGetCategory($cat)
 {
+    global $OUTPUT;
     if ($cat == null || !is_string($cat) || strlen($cat) == 0) {
         return;
     }
@@ -408,7 +422,7 @@ function createOrGetCategory($cat)
     $cat_id = get_cat_ID($cat);
 
     if ($cat_id != 0) {
-        debug("Found category! " . $cat_id);
+        $OUTPUT->appendParagraph("Found category! " . $cat_id);
         return $cat_id;
     }
     // CREATE CATEGORY AND RETURN ID; wp_insert_category
@@ -421,8 +435,8 @@ function createOrGetCategory($cat)
         )
     );
 
-    debug("Result from creation of category: " . var_dump($result));
-    debug("Create or get Category" . get_cat_ID($cat));
+    $OUTPUT->appendParagraph("Result from creation of category: " . var_dump($result));
+    $OUTPUT->appendParagraph("Create or get Category" . get_cat_ID($cat));
     return get_cat_id($cat);
 }
 
@@ -450,7 +464,9 @@ function getAPIkey()
  */
 function getCreator($authors)
 {
-    debug("<strong>Get creator</strong>");
+    global $OUTPUT;
+
+    $OUTPUT->appendParagraph("Get creator");
     if ($authors == null)
         return null;
 
@@ -478,8 +494,9 @@ function getCreator($authors)
  */
 function setAuthors($post_id, $authors)
 {
-    debug("<strong>Set authors</strong>");
-    debug($authors);
+    global $OUTPUT;
+    $OUTPUT->appendSubheading("Setting authors");
+    $OUTPUT->appendParagraph($authors);
     if (!is_numeric($post_id) || $authors == null) {
         return;
     }
@@ -497,8 +514,8 @@ function setAuthors($post_id, $authors)
     }
 
     $result = update_post_meta($post_id, "nml2_multiple_authors", $author_meta);
-    debug("Result ");
-    debug($result);
+    $OUTPUT->appendParagraph("Result ");
+    $OUTPUT->appendParagraph($result);
 
 }
 
@@ -512,7 +529,7 @@ function setAuthors($post_id, $authors)
  */
 function createOrGetAuthor($auth)
 {
-
+    global $OUTPUT;
 
     // Return if null or author has no name
     if ($auth == null || strlen($auth['user_login']) <= 0) {
@@ -523,7 +540,7 @@ function createOrGetAuthor($auth)
 
 
     if ($author->ID != null) {
-        debug("Found author! Author ID: $author->ID");
+        $OUTPUT->appendParagraph("Found author! Author ID: $author->ID");
         return $author->ID;
     }
 
@@ -543,11 +560,12 @@ function createOrGetAuthor($auth)
  */
 function exitAPI()
 {
-    global $DEBUG, $MANUAL_UPLOAD;
+    global $DEBUG, $MANUAL_UPLOAD, $OUTPUT;
 
-
-    if (!$DEBUG) {
-        ob_clean();
+    $OUTPUT->appendSubheading("Exit API ");
+    $OUTPUT->appendParagraph("Successful");
+    if ($DEBUG) {
+        $OUTPUT->render();
     }
 
     // Always return successful (Not critical should be fixed)
@@ -559,6 +577,8 @@ function exitAPI()
             die("File upload failed: " . http_response_code() . '<br><a href="' . $_SERVER['HTTP_REFERER'] . '">Back</a>');
         }
     }
+
+
     exit;
 }
 
@@ -569,15 +589,16 @@ function exitAPI()
  */
 function authenticateUser()
 {
+    global $OUTPUT;
 
-    debug("<h3>Authentication</h3>");
+    $OUTPUT->newHeading("Authentication");
 
     if (!authentication()) {
-        debug("Failed");
+        $OUTPUT->appendParagraph("Failed");
         httpHeader::setHeader(401); // Unauthorized
         exitAPI();
     }
-    debug("Successful");
+    $OUTPUT->appendParagraph("Successful");
 }
 
 
@@ -608,12 +629,13 @@ function authentication()
  */
 function setGlobalUserVariables()
 {
-    global $DEBUG, $UPDATE_OVERRIDE, $MANUAL_UPLOAD;
+    global $DEBUG, $UPDATE_OVERRIDE, $MANUAL_UPLOAD, $OUTPUT;
 
     if (isset($_GET["debug"]) && $_GET["debug"] == true) {
         error_reporting(E_ALL);
         ini_set('display_errors', 1);
         $DEBUG = true;
+        $OUTPUT = new HTMLView();
     }
 
     if (isset($_GET["update_override"]) && $_GET["update_override"] == true) {
@@ -638,8 +660,9 @@ function setGlobalUserVariables()
  */
 function getPostByGUID($guid)
 {
+    global $OUTPUT;
 
-    debug("<p><strong>Get post by nml2-guid:</strong> $guid </p>");
+    $OUTPUT->appendParagraph("Get post by nml2-guid: $guid ");
 
     $args = array(
         'meta_key' => 'nml2_guid',

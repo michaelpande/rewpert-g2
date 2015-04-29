@@ -1,49 +1,34 @@
 <?php
 
+require(__DIR__ . '/../outputView/HTMLView.php');
 
-	/**
-	 * Returns useful debugging messages if &debug=true
-	 * echos strings and xs everything else.
-	 *
-	 * @param $str - String or item
-	 *
-	 * @author Michael Pande
-	 */
-	function debug($str){
-		global $DEBUG;
-		if($DEBUG){
-			if(is_string($str)){
-				echo "<p>".$str."</p>"; // Using <p> to create new lines.
-			}else{
-				var_dump($str);
-			}
-		}
-	}
 
 /**
+ * Gets userinput or exits the API with a 400 bad request.
  * @return File|null|string
  */
-function getUserInput(){
+function getUserInput()
+{
 
-        // Checks request method, returns 400 if not HTTP POST
-        if($_SERVER['REQUEST_METHOD'] != 'POST'){
-            debug("The REQUEST_METHOD was not POST");
-            setHeader(400); // Bad Request
-            exitAPI();
-        }
-
-        $userInput = null;
-
-        $file = fileUpload();
-        if($file != null){
-            $userInput = $file;
-        }else{
-            $userInput = getRequestParams();
-        }
-
-        return $userInput;
-
+    // Checks request method, returns 400 if not HTTP POST
+    if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] != 'POST') {
+        output("The REQUEST_METHOD was not POST or not set");
+        httpHeader::setHeader(400); // Bad Request
+        exitAPI();
     }
+
+    $userInput = null;
+
+    $file = fileUpload();
+    if ($file != null) {
+        $userInput = $file;
+    } else {
+        $userInput = getRequestParams();
+    }
+
+    return $userInput;
+
+}
 
 
 /**
@@ -51,17 +36,18 @@ function getUserInput(){
  * @author Stefan Grunert (Aptoma - Dr. Publish)
  */
 function getRequestParams()
-	{
-		 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-			return $_GET;
-		 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-			return file_get_contents("php://input");
-		 } elseif ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-			return file_get_contents("php://input");
-		 } elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
-			return file_get_contents("php://input");
-		 }
-	}
+{
+
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        return $_GET;
+    } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        return file_get_contents("php://input");
+    } elseif ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+        return file_get_contents("php://input");
+    } elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+        return file_get_contents("php://input");
+    }
+}
 
 
 /**
@@ -70,8 +56,9 @@ function getRequestParams()
  *
  * @author Michael Pande
  */
-function fileUpload(){
-    if($_FILES == null || isset($_FILES["uploaded_file"]) || isset($_FILES["uploaded_file"]["tmp_name"])){
+function fileUpload()
+{
+    if ($_FILES == null || isset($_FILES["uploaded_file"]) || isset($_FILES["uploaded_file"]["tmp_name"])) {
         return null;
     }
     return file_get_contents($_FILES["uploaded_file"]["tmp_name"]);

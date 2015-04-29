@@ -1,0 +1,17 @@
+body{
+    font-family:sans-serif;
+    padding:2em;
+}
+
+p{
+    white-space: pre;
+
+}
+
+h2{
+    margin-top:3em;
+}
+
+h3{
+    margin-top:2em;
+}

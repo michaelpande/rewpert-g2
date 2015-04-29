@@ -8,8 +8,9 @@ class httpHeader{
      */
 		public static function setHeader($statusCode) {
 
+
 			if(headers_sent() || $statusCode == null || !is_numeric($statusCode)){
-				return;
+                return "f";
 			}
 			switch($statusCode){
 				case 100 : $message = "Continue"; break;
