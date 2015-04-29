@@ -12,6 +12,7 @@ class NewsItemParse {
     /*Array structure of $returnArray that are sent to the RESTApi:
         $returnArray = array(
             'status_code' => int
+            'error_message' => string
             0 => newsItemArray = array(
                     'post' => $post = array(
                                 'post_content' => string
@@ -127,24 +128,30 @@ class NewsItemParse {
      * @author Petter Lundberg Olsen
      */
     public static function parseNewsML($xml) {
-        global $_ns;
-        global $_addToArray;
-        global $_xpath;
+        global $_ns, $_addToArray, $_xpath;
 
         $returnArray = array(
             'status_code' => 200, //int, the status code automatically set to 200
             'error_message' => null
         );
 
+        //Checks if input i empty
         if ($xml == null) {
-            $returnArray = self::setErrorMessage($returnArray, 400, "Missing payload in HTTP POST<br/>");
+            $returnArray = self::setErrorMessage($returnArray, 400, "\r\nMissing payload in HTTP POST");
+
+            return $returnArray;
+        }
+
+        //Enters catch if $xml is not valid xml
+        try {
+            self::createXpath($xml);
+        } catch(Exception $e) {
+            $returnArray = self::setErrorMessage($returnArray, 400, $e->getMessage());
 
             return $returnArray;
         }
 
         $_addToArray = true;
-
-        self::createXpath($xml);
 
         /*Query to separate the different newsItems in a newsMessage
           This query will find the absolute path (without XML namespaces): newsMessage/itemSet/newsItem
@@ -185,13 +192,13 @@ class NewsItemParse {
     }
 
 
-
     /**
      * Declares a new DOMXpath object
      *
      * This method declares the DOMXpath object used to find all information in a XML document.
      * Namespaces are also registered in this method.
      * @param string $xml raw XML on the NewsMl-G2 standard
+     * @throws Exception if $xml is not valid xml
      * @author Petter Lundberg Olsen
      */
     private static function createXpath($xml) {
@@ -200,10 +207,16 @@ class NewsItemParse {
         $doc = new DOMDocument();
 
         $xml = ltrim($xml);
+        set_error_handler(function(){});
+        if(simplexml_load_string($xml) === false) {
+            restore_error_handler();
+            throw new Exception("\r\nInput is not valid xml");
+        }
+        restore_error_handler();
+
 
         //Checks if $file is raw XML or a XML file and uses the correct load operation
         $doc->loadXML($xml);
-
 
         //Finds the namespace of the outermost tag in the xml file
         $uri = $doc->documentElement->lookupnamespaceURI(null);
@@ -1306,35 +1319,51 @@ class NewsItemParse {
 
         for ($i = 0; $i < count($returnArray) - 2; $i++) {
             if ($returnArray[$i]['post']['post_content'] == null) {
-                $returnArray = self::setErrorMessage($returnArray, 400, "Missing post content<br/>");
+                $returnArray = self::setErrorMessage($returnArray, 400, "\r\nMissing post content");
             }
             if ($returnArray[$i]['post']['post_title'] == null) {
-                $returnArray = self::setErrorMessage($returnArray, 400, "Missing version post title<br/>");
+                $returnArray = self::setErrorMessage($returnArray, 400, "\r\nMissing version post title");
             }
             if ($returnArray[$i]['meta']['nml2_guid'] == null) {
-                $returnArray = self::setErrorMessage($returnArray, 400, "Missing guid<br/>");
+                $returnArray = self::setErrorMessage($returnArray, 400, "\r\nMissing guid");
             }
             if ($returnArray[$i]['meta']['nml2_version'] == null) {
-                $returnArray = self::setErrorMessage($returnArray, 400, "Missing verison number<br/>");
+                $returnArray = self::setErrorMessage($returnArray, 400, "\r\nMissing venison number");
             }
         }
 
         return $returnArray;
     }
 
+    /**
+     * Sets 'error_message' in $returnArray
+     *
+     * This method receive a HTTP status code and an error messages and sets the values in $returnArray accordingly
+     *
+     * @param $returnArray
+     * @param int $statusCode The status code
+     * @param string $message The error message
+     * @return array $returnArray whit new statusCode
+     */
     private static function setErrorMessage($returnArray, $statusCode, $message) {
-        $returnArray['status_code'] = $statusCode;
+        if($returnArray['status_code'] == 200) {
+            $returnArray['status_code'] = $statusCode;
+        }
         $returnArray['error_message'] = $returnArray['error_message'] . $message;
 
         return $returnArray;
     }
 
+    /**
+     * @param $nodeList
+     * @return string
+     */
     private static function nodeListNotNull($nodeList) {
         if ($nodeList != null) {
             return $nodeList->nodeValue;
         }
 
-        return null;
+        return $nodeList;
     }
 
 }
