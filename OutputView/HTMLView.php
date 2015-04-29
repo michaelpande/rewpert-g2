@@ -26,12 +26,13 @@ class HTMLView {
     private $title;
     private $description;
     private $items;
-    private $lastIndex;
+    private $lastIndex = 0;
 
     public $h2 = "h2";
     public $h3 = "h3";
     public $h4 = "h4";
     public $p = "p";
+    public $strong = "strong";
 
 
     public function __construct(){
@@ -53,11 +54,7 @@ class HTMLView {
     public function newHeading($str){
         $str = $this->getString($str);
 
-        if(!$this->lastIndex){
-            $this->lastIndex=0;
-        }else{
-            $this->lastIndex++;
-        }
+        $this->lastIndex++;
 
 
         $this->items[$this->lastIndex] = array(
@@ -67,8 +64,8 @@ class HTMLView {
         return $this->lastIndex;
     }
 
-    public function appendParagraph($str){
 
+    public function appendParagraph($str){
 
         if(!isset($this->lastIndex)){
             return;
@@ -79,6 +76,22 @@ class HTMLView {
     public function appendParagraphTo($str, $id){
         $this->appendTo($str,$this->p, $id);
     }
+
+    public function appendStrongText($str){
+
+
+        if(!isset($this->lastIndex)){
+            return;
+        }
+        $this->appendTo($str,$this->strong, $this->lastIndex);
+    }
+
+    public function appendStrongTextTo($str, $id){
+        $this->appendTo($str,$this->strong, $id);
+    }
+
+
+
 
     public function appendSubheading($str){
         if(!isset($this->lastIndex)){

@@ -3,6 +3,22 @@
 require(__DIR__ . '/../outputView/HTMLView.php');
 
 
+
+ function validateNewsML($xml) {
+    require(__DIR__ ."/NewsMLValidator/classes/DocumentDetector.php");
+    require(__DIR__ ."/NewsMLValidator/classes/NewsMLValidationRunner.php");
+    require(__DIR__ ."/NewsMLValidator/classes/NewsMLValidationResult.php");
+    require(__DIR__ ."/NewsMLValidator/classes/DocumentProperties.php");
+
+    $xml = ltrim($xml);
+
+    $validator = new NewsMLValidationRunner();
+
+    $result = $validator->run($xml);
+
+    return $result;
+}
+
 /**
  * Gets userinput or exits the API with a 400 bad request.
  * @return File|null|string

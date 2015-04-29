@@ -32,19 +32,48 @@ $DEBUG = false;                 // Return debug information or not
 $UPDATE_OVERRIDE = false;       // True = Ignore version number in NewsItem and do update anyways.
 $MANUAL_UPLOAD = false;         // If the import is done manually
 $OUTPUT = new HTMLView();       // Create HTML view for all the output
+$VALIDATE_NEWSML = true;        // If NewsML-G2 should be validated
 
 setGlobalUserVariables();       // Sets the global variables above with user values
 
 $OUTPUT->setTitle("Rewpert-G2 Output");
-$OUTPUT->setDescription("This output is here to help debugging.");
+$OUTPUT->setDescription("");
+
 
 authenticateUser();             // Stops the entire process if key is invalid
 
 $userInput = getUserInput();    // Will stop the entire process if invalid request and set headers accordingly
 
 
+
+
+if($VALIDATE_NEWSML){
+
+    $OUTPUT->newHeading("Validating NewsML-G2");
+    $validationResult = validateNewsML($userInput);
+
+    if($validationResult != null && $validationResult->hasError) {
+
+        if (empty($validationResult->errors)) {
+            $OUTPUT->appendParagraph($validationResult->message);
+        } else {
+            $OUTPUT->appendParagraph($validationResult->errors);
+        }
+        httpHeader::setHeader(400);
+        exitAPI();
+    }else{
+        $OUTPUT->appendParagraph("Document is valid NewsML-G2");
+    }
+}
+
+
+
+
+
+
 $containedKnowledgeItems = QCodes::updatePluginDB($userInput);   // If $userInput has KnowledgeItem: Updates the plugin specific QCodes database with QCodes
 $OUTPUT->newHeading("Returned from KnowledgeItemParser.php");
+$OUTPUT->appendParagraph("Contained and imported KnowledgeItems:");
 $OUTPUT->appendParagraph($containedKnowledgeItems);
 
 
@@ -94,7 +123,7 @@ exitAPI();
  */
 function insertNewsItem($newsItem)
 {
-    global $UPDATE_OVERRIDE, $OUTPUT;
+    global $UPDATE_OVERRIDE, $OUTPUT, $IMPORTANT_MESSAGES;
     $OUTPUT->newHeading("Insert or Update Post:");
 
 
@@ -107,7 +136,7 @@ function insertNewsItem($newsItem)
 
     $OUTPUT->appendParagraph($post);
     if ($post == null || $meta == null || ($post['post_content'] == null && $post['post_title'] == null)) {
-        $OUTPUT->appendParagraph('Something vital was not parsed: importing stopped.');
+        $OUTPUT->appendStrongText('Something vital was not parsed: importing stopped.');
         httpHeader::setHeader(400);
         exitAPI();
     }
@@ -124,13 +153,13 @@ function insertNewsItem($newsItem)
 
 
     if ($existing_post == null) {
-        $OUTPUT->appendParagraph('Did not find previous NewsItem (WP_POST) with same GUID, inserting the new one.');
+        $OUTPUT->appendStrongText('Did not find previous NewsItem (WP_POST) with same GUID, inserting the new one.');
         $result = wp_insert_post($post, true); // Creates new post
     } // Updates post with corresponding ID, if the NML2-GUID is found in the WP Database and the meta->version is higher.
 
 
     else if ($existing_post != null && ($UPDATE_OVERRIDE || $meta['nml2_version'] > get_post_meta($existing_post->ID, 'nml2_version')[0])) {   // Array Dereferencing (Requires PHP version >= 5.4)
-        $OUTPUT->appendParagraph('Found NewsItem (WP_POST) with same GUID, starting update.');
+        $OUTPUT->appendStrongText('Found NewsItem (WP_POST) with same GUID, starting update.');
         $post['ID'] = $existing_post->ID;
         $result = wp_update_post($post, true);  // Creates a new revision, leaving two similar versions in wp_database, only showing the newest. Both are accessible through the WP admin interface.
     }
@@ -138,9 +167,12 @@ function insertNewsItem($newsItem)
 
     // Found post, but not newer version
     else if ($existing_post != null) {
-        $OUTPUT->appendParagraph('Found NewsItem (WP_POST) with same GUID, but the NewsML-G2 document had a version number lower or equal to the existing post:');
+        $OUTPUT->appendStrongText('Found NewsItem (WP_POST) with same GUID, but the NewsML-G2 document had a version number lower or equal to the existing post');
+        $OUTPUT->appendStrongText('Add: &update_override=true to override NewsML-G2 version');
     }
 
+    $OUTPUT->appendSubheading("Returned from WordPress");
+    $OUTPUT->appendStrongText($result);
 
     insertPostMeta($result, $meta);
     setPostCategories($result, $subjects, $meta['nml2_language']);
@@ -149,8 +181,7 @@ function insertNewsItem($newsItem)
     setAuthors($result, $authors); // Allows multiple author support.
 
 
-    $OUTPUT->appendSubheading("Returned from WordPress");
-    $OUTPUT->appendParagraph($result);
+
 
     if ($result == null) {                // Conflict (Existing copy with same version number and GUID)
         httpHeader::setHeader(409);
@@ -181,6 +212,7 @@ function insertPhotos($post_id, $post, $photos)
     $OUTPUT->appendSubheading("Inserting Photos");
 
     if (!is_numeric($post_id) || $post == null || $photos == null) {
+        $OUTPUT->appendParagraph("No photo changes - probably because you didn't have a newer version of a NewsItem that already exists in WP with that GUID.");
         return;
     }
 
@@ -311,6 +343,7 @@ function insertPostMeta($post_id, $meta)
     global $OUTPUT;
     $OUTPUT->appendSubheading("Setting metadata");
     if (!isset($post_id) || !isset($meta) || !is_numeric($post_id) || $meta == null) {
+        $OUTPUT->appendParagraph("No metadata changes - probably because you didn't have a newer version of a NewsItem that already exists in WP with that GUID.");
         return;
     }
 
@@ -339,13 +372,14 @@ function setPostCategories($post_id, $subjects, $lang)
     global $OUTPUT;
 
     $OUTPUT->appendSubheading("Setting post categories");
-    $OUTPUT->appendParagraph("Current language:  $lang");
+
 
 
     if (!is_numeric($post_id) || $subjects == null) {
+        $OUTPUT->appendParagraph("No post category changes - probably because you didn't have a newer version of a NewsItem that already exists in WP with that GUID.");
         return;
     }
-
+    $OUTPUT->appendParagraph("Current language:  $lang");
     $category_id = array();
 
 
@@ -496,11 +530,13 @@ function setAuthors($post_id, $authors)
 {
     global $OUTPUT;
     $OUTPUT->appendSubheading("Setting authors");
-    $OUTPUT->appendParagraph($authors);
+
     if (!is_numeric($post_id) || $authors == null) {
+        $OUTPUT->appendParagraph("No author changes - probably because you didn't have a newer version of a NewsItem that already exists in WP with that GUID.");
         return;
     }
 
+    $OUTPUT->appendParagraph($authors);
     $author_meta = "";
 
 
@@ -629,7 +665,7 @@ function authentication()
  */
 function setGlobalUserVariables()
 {
-    global $DEBUG, $UPDATE_OVERRIDE, $MANUAL_UPLOAD, $OUTPUT;
+    global $DEBUG, $UPDATE_OVERRIDE, $MANUAL_UPLOAD, $OUTPUT, $VALIDATE_NEWSML;
 
     if (isset($_GET["debug"]) && $_GET["debug"] == true) {
         error_reporting(E_ALL);
@@ -644,6 +680,10 @@ function setGlobalUserVariables()
 
     if (isset($_GET["manual"]) && $_GET["manual"] == true) {
         $MANUAL_UPLOAD = true;
+    }
+
+    if (isset($_GET["validate"]) && $_GET["validate"] == false) {
+        $VALIDATE_NEWSML = false;
     }
 }
 

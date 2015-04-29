@@ -144,17 +144,6 @@ class NewsItemParse {
 
         $_addToArray = true;
 
-        $validationResult = self::validateNewsML($xml);
-
-        if($validationResult->hasError) {
-            if(empty($validationResult->errors)) {
-                $returnArray = self::setErrorMessage($returnArray, 400, $validationResult->message);
-            } else {
-                $returnArray = self::setErrorMessage($returnArray, 400, $validationResult->errors);
-            }
-        }
-
-
         self::createXpath($xml);
 
         /*Query to separate the different newsItems in a newsMessage
@@ -195,20 +184,7 @@ class NewsItemParse {
         return $returnArray;
     }
 
-    private static function validateNewsML($xml) {
-        require("NewsMLValidator/classes/DocumentDetector.php");
-        require("NewsMLValidator/classes/NewsMLValidationRunner.php");
-        require("NewsMLValidator/classes/NewsMLValidationResult.php");
-        require("NewsMLValidator/classes/DocumentProperties.php");
 
-        $xml = ltrim($xml);
-
-        $validator = new NewsMLValidationRunner();
-
-        $result = $validator->run($xml);
-
-        return $result;
-    }
 
     /**
      * Declares a new DOMXpath object

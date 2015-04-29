@@ -15,3 +15,9 @@ h2{
 h3{
     margin-top:2em;
 }
+
+strong{
+    margin: 1em 0;
+    opacity:0.7;
+    display:block;
+}
