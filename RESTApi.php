@@ -47,13 +47,26 @@ $userInput = getUserInput();    // Will stop the entire process if invalid reque
 
 
 
+
+
+
+
+
+$containedKnowledgeItems = QCodes::updatePluginDB($userInput);   // If $userInput has KnowledgeItem: Updates the plugin specific QCodes database with QCodes
+$OUTPUT->newHeading("Returned from KnowledgeItemParser.php");
+$OUTPUT->appendStrongText("Contained and imported KnowledgeItems:");
+$OUTPUT->appendParagraph($containedKnowledgeItems);
+
+
+
+
 if($VALIDATE_NEWSML){
 
     $OUTPUT->newHeading("Validating NewsML-G2");
     $validationResult = validateNewsML($userInput);
 
     if($validationResult != null && $validationResult->hasError) {
-
+        $OUTPUT->appendStrongText("Document did not validate as correct NewsML-G2");
         if (empty($validationResult->errors)) {
             $OUTPUT->appendParagraph($validationResult->message);
         } else {
@@ -69,14 +82,6 @@ if($VALIDATE_NEWSML){
 
 
 
-
-
-$containedKnowledgeItems = QCodes::updatePluginDB($userInput);   // If $userInput has KnowledgeItem: Updates the plugin specific QCodes database with QCodes
-$OUTPUT->newHeading("Returned from KnowledgeItemParser.php");
-$OUTPUT->appendParagraph("Contained and imported KnowledgeItems:");
-$OUTPUT->appendParagraph($containedKnowledgeItems);
-
-
 $parsedXML = newsItemParse::parseNewsML($userInput);              // Gets a multidimensional array in return with potential NewsItems.
 $OUTPUT->newHeading("Returned from NewsItemParse.php:");
 $OUTPUT->appendParagraph($parsedXML);
@@ -88,7 +93,7 @@ if ($parsedXML['status_code'] != 200) {       // Checks if something went wrong 
         $OUTPUT->appendParagraph("KnowledgeItem was imported, setting http header 201");
         httpHeader::setHeader(201);
     } else {
-        $OUTPUT->appendParagraph("Did not contain KnowledgeItem, so use http header from NewsItemParser");
+        $OUTPUT->appendParagraph("Did not contain KnowledgeItem, using http status code from NewsItemParser");
         httpHeader::setHeader($parsedXML['status_code']);
 
     }
@@ -599,7 +604,7 @@ function exitAPI()
     global $DEBUG, $MANUAL_UPLOAD, $OUTPUT;
 
     $OUTPUT->appendSubheading("Exit API ");
-    $OUTPUT->appendParagraph("Successful");
+    $OUTPUT->appendParagraph("Done!");
     if ($DEBUG) {
         $OUTPUT->render();
     }
@@ -667,22 +672,22 @@ function setGlobalUserVariables()
 {
     global $DEBUG, $UPDATE_OVERRIDE, $MANUAL_UPLOAD, $OUTPUT, $VALIDATE_NEWSML;
 
-    if (isset($_GET["debug"]) && $_GET["debug"] == true) {
+    if (isset($_GET["debug"]) && $_GET["debug"] == "true") {
         error_reporting(E_ALL);
         ini_set('display_errors', 1);
         $DEBUG = true;
         $OUTPUT = new HTMLView();
     }
 
-    if (isset($_GET["update_override"]) && $_GET["update_override"] == true) {
+    if (isset($_GET["update_override"]) && $_GET["update_override"] == "true") {
         $UPDATE_OVERRIDE = true;
     }
 
-    if (isset($_GET["manual"]) && $_GET["manual"] == true) {
+    if (isset($_GET["manual"]) && $_GET["manual"] == "true") {
         $MANUAL_UPLOAD = true;
     }
 
-    if (isset($_GET["validate"]) && $_GET["validate"] == false) {
+    if (isset($_GET["validate"]) && $_GET["validate"] == "false") {
         $VALIDATE_NEWSML = false;
     }
 }
