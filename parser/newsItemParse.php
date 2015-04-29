@@ -7,8 +7,7 @@
  *
  * @author Petter Lundberg Olsen
  */
-class NewsItemParse
-{
+class NewsItemParse {
 
     /*Array structure of $returnArray that are sent to the RESTApi:
         $returnArray = array(
@@ -127,8 +126,7 @@ class NewsItemParse
      * @return array
      * @author Petter Lundberg Olsen
      */
-    public static function parseNewsML($xml)
-    {
+    public static function parseNewsML($xml) {
         global $_ns;
         global $_addToArray;
         global $_xpath;
@@ -139,7 +137,7 @@ class NewsItemParse
 
         $_addToArray = true;
 
-        if($xml == null) {
+        if ($xml == null) {
             $returnArray['status_code'] = 400;
 
             return $returnArray;
@@ -193,8 +191,7 @@ class NewsItemParse
      * @param string $xml raw XML on the NewsMl-G2 standard
      * @author Petter Lundberg Olsen
      */
-    private static function createXpath($xml)
-    {
+    private static function createXpath($xml) {
         global $_ns;
         global $_xpath;
         $doc = new DOMDocument();
@@ -238,8 +235,7 @@ class NewsItemParse
      * @return array
      * @author Petter Lundberg Olsen
      */
-    private static function createPostArray($newsItem)
-    {
+    private static function createPostArray($newsItem) {
         $post = array(
             'post_content' => self::getPostContent($newsItem), // The full text of the post.
             'post_name' => self::getPostName($newsItem), // The name (slug) for your post
@@ -260,8 +256,7 @@ class NewsItemParse
      * @return string content, null if no content present
      * @author Petter Lundberg Olsen
      */
-    private static function getPostContent($newsItem)
-    {
+    private static function getPostContent($newsItem) {
         global $_ns;
         global $_xpath;
         $content = null;
@@ -318,8 +313,7 @@ class NewsItemParse
      * @param DOMNode $node
      * @return string innerHTML, the result from a query containing html tags
      */
-    private static function get_inner_html($node)
-    {
+    private static function get_inner_html($node) {
         $innerHTML = '';
         $children = $node->childNodes;
         foreach ($children as $child) {
@@ -338,8 +332,7 @@ class NewsItemParse
      * @return string slugline, null if no slugline present
      * @author Petter Lundberg Olsen
      */
-    private static function getPostName($newsItem)
-    {
+    private static function getPostName($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -360,8 +353,7 @@ class NewsItemParse
      * @return string headline, null if no headline present
      * @author Petter Lundberg Olsen
      */
-    private static function getPostHeadline($newsItem)
-    {
+    private static function getPostHeadline($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -406,8 +398,7 @@ class NewsItemParse
      * @return string 'publish', 'trash' or 'pending'
      * @author Petter Lundberg Olsen
      */
-    private static function setPostStatus($newsItem)
-    {
+    private static function setPostStatus($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -424,7 +415,6 @@ class NewsItemParse
             }
         }
 
-
         return 'publish';
     }
 
@@ -438,8 +428,7 @@ class NewsItemParse
      * @return string tags, null if no tags present
      * @author Petter Lundberg Olsen
      */
-    private static function getPostTags($newsItem)
-    {
+    private static function getPostTags($newsItem) {
         global $_ns;
         global $_xpath;
         $tags = null;
@@ -468,8 +457,7 @@ class NewsItemParse
      * @return array
      * @author Petter Lundberg Olsen
      */
-    private static function createMetaArray($newsItem)
-    {
+    private static function createMetaArray($newsItem) {
         $meta = array(
             'nml2_guid' => self::getMetaGuid($newsItem), //string, the guide of the newsItem
             'nml2_version' => self::getMetaVersion($newsItem), //string, the version of the newsItem
@@ -494,8 +482,7 @@ class NewsItemParse
      * @return string guid, null if no guid present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaGuid($newsItem)
-    {
+    private static function getMetaGuid($newsItem) {
         global $_xpath;
 
         /*Query path that continues from first query at the start of the document
@@ -515,8 +502,7 @@ class NewsItemParse
      * @return string version number, null if no version present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaVersion($newsItem)
-    {
+    private static function getMetaVersion($newsItem) {
         global $_xpath;
 
         /*Query path that continues from first query at the start of the document
@@ -536,8 +522,7 @@ class NewsItemParse
      * @return string first created timestamp, null if no timestamp is present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaFirstCreated($newsItem)
-    {
+    private static function getMetaFirstCreated($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -558,8 +543,7 @@ class NewsItemParse
      * @return string version created timestamp, null if no timestamp is present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaVersionCreated($newsItem)
-    {
+    private static function getMetaVersionCreated($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -580,8 +564,7 @@ class NewsItemParse
      * @return string embargo date, null if no embargo is present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaEmbargo($newsItem)
-    {
+    private static function getMetaEmbargo($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -602,8 +585,7 @@ class NewsItemParse
      * @return string date sent timestamp, null if no date is present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaSentDate()
-    {
+    private static function getMetaSentDate() {
         global $_ns;
         global $_xpath;
 
@@ -622,8 +604,7 @@ class NewsItemParse
      * @return string The language of the news article, null if no language present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaLanguage($newsItem)
-    {
+    private static function getMetaLanguage($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -644,8 +625,7 @@ class NewsItemParse
      * @return string The copyright holder of the news article, null if no copyright present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaCopyrightHolder($newsItem)
-    {
+    private static function getMetaCopyrightHolder($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -666,8 +646,7 @@ class NewsItemParse
      * @return string The copyright notice of the news article, null if no copyright present
      * @author Petter Lundberg Olsen
      */
-    private static function getMetaCopyrightNotice($newsItem)
-    {
+    private static function getMetaCopyrightNotice($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -689,8 +668,7 @@ class NewsItemParse
      * @return array
      * @author Petter Lundberg Olsen
      */
-    private static function createUserArray($newsItem)
-    {
+    private static function createUserArray($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -728,8 +706,7 @@ class NewsItemParse
      * @return string name, null if no name present
      * @author Petter Lundberg Olsen
      */
-    private static function getUserName($cTag)
-    {
+    private static function getUserName($cTag) {
         global $_ns;
         global $_xpath;
 
@@ -764,8 +741,7 @@ class NewsItemParse
      * @return string role, null if no role present
      * @author Petter Lundberg Olsen
      */
-    private static function getUserDescription($cTag)
-    {
+    private static function getUserDescription($cTag) {
         global $_xpath;
 
         /*Query path that continues from the query in function getCreator/getContributor
@@ -785,8 +761,7 @@ class NewsItemParse
      * @return string email, null if no email present
      * @author Petter Lundberg Olsen
      */
-    private static function getUserEmail($cTag)
-    {
+    private static function getUserEmail($cTag) {
         global $_ns;
         global $_xpath;
 
@@ -804,8 +779,7 @@ class NewsItemParse
      * @return string qcode, null if no qcode present
      * @author Petter Lundberg Olsen
      */
-    private static function getUserQcode($cTag)
-    {
+    private static function getUserQcode($cTag) {
         global $_xpath;
 
         $userQcode = $_xpath->query("@qcode", $cTag)->item(0);
@@ -822,8 +796,7 @@ class NewsItemParse
      * @return string uri, null if no uri present
      * @author Petter Lundberg Olsen
      */
-    private static function getUserUri($cTag)
-    {
+    private static function getUserUri($cTag) {
         global $_xpath;
 
         /*Query path that continus from the query in function getCreator/getContributor
@@ -843,8 +816,7 @@ class NewsItemParse
      * @return array containing all subjects
      * @author Petter Lundberg Olsen
      */
-    private static function createSubjectArray($newsItem)
-    {
+    private static function createSubjectArray($newsItem) {
         global $_ns;
         global $_xpath;
         $subjects = array();
@@ -881,8 +853,7 @@ class NewsItemParse
      * @return string qcode, null if no qcode present
      * @author Petter Lundberg Olsen
      */
-    private static function getSubjectQcode($subjectTag)
-    {
+    private static function getSubjectQcode($subjectTag) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
@@ -903,8 +874,7 @@ class NewsItemParse
      * @return array containing name arrays
      * @author Petter Lundberg Olsen
      */
-    private static function getSubjectName($subjectTag)
-    {
+    private static function getSubjectName($subjectTag) {
         global $_ns;
         global $_xpath;
 
@@ -939,8 +909,7 @@ class NewsItemParse
      * @return string language, null if no language is present
      * @author Petter Lundberg Olsen
      */
-    private static function getSubjectLang($nameTag)
-    {
+    private static function getSubjectLang($nameTag) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method getSubjectName
@@ -959,8 +928,7 @@ class NewsItemParse
      * @param DOMNode $nameTag XPath query from an earlier part of the document that the new query shall be preformed on
      * @return string role null if no role is present
      */
-    private static function getSubjectRole($nameTag)
-    {
+    private static function getSubjectRole($nameTag) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method getSubjectName
@@ -980,8 +948,7 @@ class NewsItemParse
      * @return string type, null if no type present
      * @author Petter Lundberg Olsen
      */
-    private static function getSubjectType($subjectTag)
-    {
+    private static function getSubjectType($subjectTag) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
@@ -1001,8 +968,7 @@ class NewsItemParse
      * @return string uri, null if no uri present
      * @author Petter Lundberg Olsen
      */
-    private static function getSubjectUri($subjectTag)
-    {
+    private static function getSubjectUri($subjectTag) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createSubjectArray/createSubjectSameAsArray
@@ -1023,8 +989,7 @@ class NewsItemParse
      * @return array containing all subjects
      * @author Petter Lundberg Olsen
      */
-    private static function getSubjectSameAsOrBroder($subjectTag, $queryDecision)
-    {
+    private static function getSubjectSameAsOrBroder($subjectTag, $queryDecision) {
         global $_ns;
         global $_xpath;
 
@@ -1058,8 +1023,7 @@ class NewsItemParse
      * @return array contaning all subjects
      * @author Petter Lundberg Olsen
      */
-    private static function createPhotoArray($newsItem, $returnArray)
-    {
+    private static function createPhotoArray($newsItem, $returnArray) {
         global $_ns;
         global $_addToArray;
         global $_xpath;
@@ -1110,8 +1074,7 @@ class NewsItemParse
      * @return string guid of a newsItem, return null if noe
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoTextGuid($newsItem)
-    {
+    private static function getPhotoTextGuid($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -1149,8 +1112,7 @@ class NewsItemParse
      * @return string href, null if no href present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoHref($remoteContent)
-    {
+    private static function getPhotoHref($remoteContent) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createPhotoArray
@@ -1170,8 +1132,7 @@ class NewsItemParse
      * @return string size, null if no size present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoSize($remoteContent)
-    {
+    private static function getPhotoSize($remoteContent) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createPhotoArray
@@ -1191,8 +1152,7 @@ class NewsItemParse
      * @return string width, null if no width present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoWidth($remoteContent)
-    {
+    private static function getPhotoWidth($remoteContent) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createPhotoArray
@@ -1212,8 +1172,7 @@ class NewsItemParse
      * @return string height, null if no height present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoHeight($remoteContent)
-    {
+    private static function getPhotoHeight($remoteContent) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createPhotoArray
@@ -1233,8 +1192,7 @@ class NewsItemParse
      * @return string contenttype, null if no contenttype present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoContenttype($remoteContent)
-    {
+    private static function getPhotoContenttype($remoteContent) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createPhotoArray
@@ -1254,8 +1212,7 @@ class NewsItemParse
      * @return string colourspace, null if no colourspace present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoColourspace($remoteContent)
-    {
+    private static function getPhotoColourspace($remoteContent) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createPhotoArray
@@ -1275,8 +1232,7 @@ class NewsItemParse
      * @return string rendition, null if no rendition present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoRendition($remoteContent)
-    {
+    private static function getPhotoRendition($remoteContent) {
         global $_xpath;
 
         /*This XPath query is a subquery from the query in the method createPhotoArray
@@ -1296,8 +1252,7 @@ class NewsItemParse
      * @return string The description of the image, null if no description present
      * @author Petter Lundberg Olsen
      */
-    private static function getPhotoDescription($newsItem)
-    {
+    private static function getPhotoDescription($newsItem) {
         global $_ns;
         global $_xpath;
 
@@ -1319,8 +1274,7 @@ class NewsItemParse
      * @return string 'publish' or 'future'
      * @author Petter Lundberg Olsen
      */
-    private static function setEbargoState($embargo)
-    {
+    private static function setEbargoState($embargo) {
         if ($embargo == null) {
             return 'publish';
         } else {
@@ -1339,14 +1293,13 @@ class NewsItemParse
      * @return int 200 if all OK, 400 if something is missing and 'status_code' value if not 200
      * @author Petter Lundberg Olsen
      */
-    private static function setStatusCode($returnArray)
-    {
+    private static function setStatusCode($returnArray) {
 
         if ($returnArray['status_code'] != 200) {
             return $returnArray['status_code'];
         }
 
-        if (count($returnArray) == 0) {
+        if (count($returnArray) == 1) {
             return 400;
         }
 
@@ -1365,8 +1318,7 @@ class NewsItemParse
         return 200;
     }
 
-    private static function nodeListNotNull($nodeList)
-    {
+    private static function nodeListNotNull($nodeList) {
         if ($nodeList != null) {
             return $nodeList->nodeValue;
         }
