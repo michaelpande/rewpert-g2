@@ -1,4 +1,5 @@
-Copyright Michael Pande, Petter Lundberg Olsen, Diego Alonso Pasten Bahamondes and other contributors, http://demo-nmlg2wp.rhcloud.com
+Copyright Michael Pande, Petter Lundberg Olsen, Diego Alonso Pasten Bahamondes
+and other contributors, http://demo-nmlg2wp.rhcloud.com
 
 This software consists of voluntary contributions made by many
 individuals. For exact contribution history, see the revision history
