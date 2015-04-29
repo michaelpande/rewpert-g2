@@ -53,14 +53,14 @@ $userInput = getUserInput();    // Will stop the entire process if invalid reque
 
 
 $containedKnowledgeItems = QCodes::updatePluginDB($userInput);   // If $userInput has KnowledgeItem: Updates the plugin specific QCodes database with QCodes
-$OUTPUT->newHeading("Returned from KnowledgeItemParser.php");
+$OUTPUT->newHeading("Parsing KnowledgeItems");
 $OUTPUT->appendStrongText("Contained and imported KnowledgeItems:");
 $OUTPUT->appendParagraph($containedKnowledgeItems);
 
 
 
 
-if($VALIDATE_NEWSML){
+if($VALIDATE_NEWSML){  // Validating NewsItems only, not KnowledgeItems
 
     $OUTPUT->newHeading("Validating NewsML-G2");
     $validationResult = validateNewsML($userInput);
@@ -83,11 +83,13 @@ if($VALIDATE_NEWSML){
 
 
 $parsedXML = newsItemParse::parseNewsML($userInput);              // Gets a multidimensional array in return with potential NewsItems.
-$OUTPUT->newHeading("Returned from NewsItemParse.php:");
-$OUTPUT->appendParagraph($parsedXML);
+$OUTPUT->newHeading("Parsing NewsItems:");
 
 
 if ($parsedXML['status_code'] != 200) {       // Checks if something went wrong during parsing
+    if($parsedXML['error_message'] != null){
+        $OUTPUT->appendStrongText($parsedXML['error_message']);
+    }
 
     if ($containedKnowledgeItems) {
         $OUTPUT->appendParagraph("KnowledgeItem was imported, setting http header 201");
@@ -98,8 +100,11 @@ if ($parsedXML['status_code'] != 200) {       // Checks if something went wrong 
 
     }
 
-    exitAPI();
+    exitAPI(); 
 }
+
+$OUTPUT->appendParagraph($parsedXML);
+
 
 
 // For each NewsItem or similar returned from NewsItemParse

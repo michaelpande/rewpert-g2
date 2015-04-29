@@ -169,7 +169,8 @@ class KnowledgeItemParse {
 	
 	/**
 	 * Gets document either from file or from URL
-	 * 
+     *
+	 * @param $file
 	 * @return DOMDocument
 	 *
 	 * @author Michael Pande
@@ -181,17 +182,25 @@ class KnowledgeItemParse {
 		if($file == null){
 			return null;
 		}
-		
-		$file = ltrim($file);
 
-		if(is_file($file)) {    //Checks if $file is file or text
-			$doc->load($file);
-		}
-		else {
-			
-			$doc->loadXML($file);
-		
-		}
+
+        set_error_handler(function() { /* ignore errors */ });
+        try{
+            $file = ltrim($file);
+            if(is_file($file)) {    //Checks if $file is file or text
+                $doc->load($file);
+            }
+            else {
+                $doc->loadXML($file);
+            }
+        }catch(Exception $e){
+            restore_error_handler();
+            return null;
+        }
+        restore_error_handler();
+
+
+
 		return $doc;
 	}
 	
