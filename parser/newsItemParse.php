@@ -132,16 +132,28 @@ class NewsItemParse {
         global $_xpath;
 
         $returnArray = array(
-            'status_code' => 200 //int, the status code automatically set to 200
+            'status_code' => 200, //int, the status code automatically set to 200
+            'error_message' => null
         );
 
-        $_addToArray = true;
-
         if ($xml == null) {
-            $returnArray['status_code'] = 400;
+            $returnArray = self::setErrorMessage($returnArray, 400, "Missing payload in HTTP POST<br/>");
 
             return $returnArray;
         }
+
+        $_addToArray = true;
+
+        $validationResult = self::validateNewsML($xml);
+
+        if($validationResult->hasError) {
+            if(empty($validationResult->errors)) {
+                $returnArray = self::setErrorMessage($returnArray, 400, $validationResult->message);
+            } else {
+                $returnArray = self::setErrorMessage($returnArray, 400, $validationResult->errors);
+            }
+        }
+
 
         self::createXpath($xml);
 
@@ -178,9 +190,24 @@ class NewsItemParse {
         $_addToArray = true;
 
         //Checking if there is any errors in the data gathered from the newsML document and changes status code accordingly
-        $returnArray['status_code'] = self::setStatusCode($returnArray);
+        $returnArray = self::setStatusCode($returnArray);
 
         return $returnArray;
+    }
+
+    private static function validateNewsML($xml) {
+        require("NewsMLValidator/classes/DocumentDetector.php");
+        require("NewsMLValidator/classes/NewsMLValidationRunner.php");
+        require("NewsMLValidator/classes/NewsMLValidationResult.php");
+        require("NewsMLValidator/classes/DocumentProperties.php");
+
+        $xml = ltrim($xml);
+
+        $validator = new NewsMLValidationRunner();
+
+        $result = $validator->run($xml);
+
+        return $result;
     }
 
     /**
@@ -196,14 +223,11 @@ class NewsItemParse {
         global $_xpath;
         $doc = new DOMDocument();
 
-        $file = ltrim($xml);
+        $xml = ltrim($xml);
 
         //Checks if $file is raw XML or a XML file and uses the correct load operation
-        if (is_file($file)) {
-            $doc->load($file);
-        } else {
-            $doc->loadXML($file);
-        }
+        $doc->loadXML($xml);
+
 
         //Finds the namespace of the outermost tag in the xml file
         $uri = $doc->documentElement->lookupnamespaceURI(null);
@@ -1042,7 +1066,7 @@ class NewsItemParse {
                 return $returnArray;
             }
 
-            for ($i = 0; $i < count($returnArray) - 1; $i++) {
+            for ($i = 0; $i < count($returnArray) - 2; $i++) {
                 if ($returnArray[$i]['meta']['nml2_guid'] == $guid) {
                     $photo = array(
                         'href' => self::getPhotoHref($node), //string, the source of the image
@@ -1296,26 +1320,37 @@ class NewsItemParse {
     private static function setStatusCode($returnArray) {
 
         if ($returnArray['status_code'] != 200) {
-            return $returnArray['status_code'];
+            return $returnArray;
         }
 
-        if (count($returnArray) == 1) {
-            return 400;
+        if (count($returnArray) == 2) {
+            $returnArray = self::setErrorMessage($returnArray, 400, "The document contains no newsItems");
+            return $returnArray;
         }
 
-        for ($i = 0; $i < count($returnArray) - 1; $i++) {
+        for ($i = 0; $i < count($returnArray) - 2; $i++) {
             if ($returnArray[$i]['post']['post_content'] == null) {
-                return 400;
-            } else if ($returnArray[$i]['post']['post_title'] == null) {
-                return 400;
-            } else if ($returnArray[$i]['meta']['nml2_guid'] == null) {
-                return 400;
-            } else if ($returnArray[$i]['meta']['nml2_version'] == null) {
-                return 400;
+                $returnArray = self::setErrorMessage($returnArray, 400, "Missing post content<br/>");
+            }
+            if ($returnArray[$i]['post']['post_title'] == null) {
+                $returnArray = self::setErrorMessage($returnArray, 400, "Missing version post title<br/>");
+            }
+            if ($returnArray[$i]['meta']['nml2_guid'] == null) {
+                $returnArray = self::setErrorMessage($returnArray, 400, "Missing guid<br/>");
+            }
+            if ($returnArray[$i]['meta']['nml2_version'] == null) {
+                $returnArray = self::setErrorMessage($returnArray, 400, "Missing verison number<br/>");
             }
         }
 
-        return 200;
+        return $returnArray;
+    }
+
+    private static function setErrorMessage($returnArray, $statusCode, $message) {
+        $returnArray['status_code'] = $statusCode;
+        $returnArray['error_message'] = $returnArray['error_message'] . $message;
+
+        return $returnArray;
     }
 
     private static function nodeListNotNull($nodeList) {
