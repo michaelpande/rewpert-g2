@@ -10,7 +10,11 @@ class httpHeader{
 
 
 			if(headers_sent() || $statusCode == null || !is_numeric($statusCode)){
-                return "f";
+                echo "The dolphin";
+                if(headers_sent()){
+                    echo "YOYOYO HEADERS HAS BEEN SENT, MOTHERFUCKER";
+                }
+                return;
 			}
 			switch($statusCode){
 				case 100 : $message = "Continue"; break;

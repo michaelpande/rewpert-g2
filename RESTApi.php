@@ -26,7 +26,7 @@ require('functions/httpHeader.php');          // Sets HTTP status codes
 require('../../../wp-load.php');          // Potentially creates bugs. Necessary to access methods in the WordPress core from outside.
 
 
-//ob_start();                     // Turns output buffering on, making it possible to modify header information (status codes etc) after echoing, printing and var_dumping.
+ob_start();                     // Turns output buffering on, making it possible to modify header information (status codes etc) after echoing, printing and var_dumping.
 
 $DEBUG = false;                 // Return debug information or not
 $UPDATE_OVERRIDE = false;       // True = Ignore version number in NewsItem and do update anyways.
@@ -63,7 +63,10 @@ $OUTPUT->appendParagraph($containedKnowledgeItems);
 if($VALIDATE_NEWSML){  // Validating NewsItems only, not KnowledgeItems
 
     $OUTPUT->newHeading("Validating NewsML-G2");
+
+    set_error_handler(function () {}); // Suppress warnings in the validator
     $validationResult = validateNewsML($userInput);
+    restore_error_handler();
 
     if($validationResult != null && $validationResult->hasError) {
         $OUTPUT->appendStrongText("Document did not validate as correct NewsML-G2");
@@ -72,6 +75,7 @@ if($VALIDATE_NEWSML){  // Validating NewsItems only, not KnowledgeItems
         } else {
             $OUTPUT->appendParagraph($validationResult->errors);
         }
+
         httpHeader::setHeader(400);
         exitAPI();
     }else{
@@ -397,6 +401,7 @@ function setPostCategories($post_id, $subjects, $lang)
 
         // Have to find match on language
         $OUTPUT->appendParagraph($subject);
+        $id = null;
         foreach ($subject['name'] as $nameKey => $nameVal) {
             $id = null;
 
@@ -412,7 +417,8 @@ function setPostCategories($post_id, $subjects, $lang)
                 } else {
                     $OUTPUT->appendParagraph("Checking for existing category..");
                     $result = QCodes::getSubject($subject['qcode'], $lang);
-                    if ($result != null) {
+
+                    if ($result != null && isset($result['name'])) {
                         $id = createOrGetCategory($result['name']);
                     }
                 }
@@ -435,7 +441,7 @@ function setPostCategories($post_id, $subjects, $lang)
             $OUTPUT->appendParagraph("GET SUBJECT: " . $subject['qcode'] . ", $lang");
             $result = QCodes::getSubject($subject['qcode'], $lang);
             $OUTPUT->appendParagraph($result);
-            if ($result != null) {
+            if ($result != null && isset($result['name'])) {
                 $id = createOrGetCategory($result['name']);
                 array_push($category_id, $id);
             }
@@ -479,7 +485,8 @@ function createOrGetCategory($cat)
         )
     );
 
-    $OUTPUT->appendParagraph("Result from creation of category: " . var_dump($result));
+    $OUTPUT->appendParagraph("Result from creation of category: ");
+    $OUTPUT->appendParagraph($result);
     $OUTPUT->appendParagraph("Create or get Category" . get_cat_ID($cat));
     return get_cat_id($cat);
 }
@@ -518,8 +525,7 @@ function getCreator($authors)
 
         $creator = createOrGetAuthor($nameVal);
 
-        if ($creator != null || $creator == "") {
-
+        if ($creator != null && !is_wp_error($creator) ) {
             return $creator;
         }
     }
@@ -585,7 +591,7 @@ function createOrGetAuthor($auth)
     $author = get_user_by('login', $auth['user_login']);
 
 
-    if ($author->ID != null) {
+    if ($author != null && isset($author->ID) && $author->ID != null) {
         $OUTPUT->appendParagraph("Found author! Author ID: $author->ID");
         return $author->ID;
     }

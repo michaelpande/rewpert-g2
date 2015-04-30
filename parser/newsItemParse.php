@@ -209,18 +209,24 @@ class NewsItemParse {
         global $_ns, $_xpath;
         $doc = new DOMDocument();
 
-        $xml = ltrim($xml);
-        set_error_handler(function () {
-        });
-        if (simplexml_load_string($xml) === false) {
+
+        // Suppression hack
+        set_error_handler(function() { /* ignore errors */ });
+        try{
+            $xml = ltrim($xml);
+            if(is_file($xml)) {    //Checks if $file is file or text
+                $doc->load($xml);
+            }
+            else {
+                $doc->loadXML($xml);
+            }
+        }catch(Exception $e){
             restore_error_handler();
-            throw new Exception("\r\nInput is not valid xml");
+            return null;
         }
         restore_error_handler();
 
 
-        //Checks if $file is raw XML or a XML file and uses the correct load operation
-        $doc->loadXML($xml);
 
         //Finds the namespace of the outermost tag in the xml file
         $uri = $doc->documentElement->lookupnamespaceURI(null);
@@ -328,6 +334,9 @@ class NewsItemParse {
      */
     private static function get_inner_html($node) {
         $innerHTML = '';
+        if($node == null){
+            return null;
+        }
         $children = $node->childNodes;
         foreach ($children as $child) {
             $innerHTML .= $child->ownerDocument->saveXML($child);
