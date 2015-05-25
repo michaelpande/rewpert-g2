@@ -118,16 +118,41 @@ class DocumentDetector
 
     public static function loadXHTMLDom($html, DocumentProperties $docProps)
     {
+        echo "1";
         $html = "<!DOCTYPE " . DocumentDetector::doctypeDeclaration($docProps->standard) . ">" . $html;
         $dom = new DOMDocument('1.0', 'UTF-8');
+        echo "2";
+        // Suppression hack
+        set_error_handler(function () { /* ignore errors */
+        });
+        if (simplexml_load_string($html) === false) {
+            restore_error_handler();
+            throw new Exception("\r\nInput is not valid xml");
+        }
+        $html = ltrim($html);
         $dom->loadXML($html);
+        restore_error_handler();
         return $dom;
+
     }
 
     public static function loadNewsMLDom($newsML)
     {
         $dom = new DOMDocument('1.0', 'UTF-8');
+        // Suppression hack
+        set_error_handler(function () { /* ignore errors */
+        });
+        if (simplexml_load_string($newsML) === false) {
+            restore_error_handler();
+            throw new Exception("\r\nInput is not valid xml");
+        }
+        $newsML = ltrim($newsML);
         $dom->loadXML($newsML);
+        restore_error_handler();
+
+
+
+
         $dom->documentElement->setAttribute("xmlns", "http://iptc.org/std/nar/2006-10-01/");
         $dom->documentElement->setAttribute("xmlns:xhtml", "http://www.w3.org/1999/xhtml");
         $dom->documentElement->setAttribute("xmlns:xs", "http://www.w3.org/2001/XMLSchema");

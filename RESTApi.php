@@ -57,6 +57,17 @@ $OUTPUT->newHeading("Parsing KnowledgeItems");
 $OUTPUT->appendStrongText("Contained and imported KnowledgeItems:");
 $OUTPUT->appendParagraph($containedKnowledgeItems);
 
+if($containedKnowledgeItems){
+    httpHeader::setHeader(201);
+    $OUTPUT->appendParagraph("Ignore validate request, setting header 201 and exiting. This happens because the API
+    and validator does not support KnowledgeItems and NewsItem in the same file.");
+    exitAPI();
+}
+
+
+
+
+
 
 
 
@@ -67,6 +78,7 @@ if($VALIDATE_NEWSML){  // Validating NewsItems only, not KnowledgeItems
     set_error_handler(function () {}); // Suppress warnings in the validator
     $validationResult = validateNewsML($userInput);
     restore_error_handler();
+
 
     if($validationResult != null && $validationResult->hasError) {
         $OUTPUT->appendStrongText("Document did not validate as correct NewsML-G2");
@@ -82,6 +94,10 @@ if($VALIDATE_NEWSML){  // Validating NewsItems only, not KnowledgeItems
         $OUTPUT->appendParagraph("Document is valid NewsML-G2");
     }
 }
+
+
+
+
 
 
 

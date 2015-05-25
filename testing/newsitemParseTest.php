@@ -115,7 +115,7 @@ class newsitemParseTest extends PHPUnit_Framework_TestCase {
     public function testPostContentOK() {
         //Arrange
         $xml = self::completeNewsML();
-        $post_contentCorrect = "<p>Article content</p>";
+        $post_contentCorrect = '<div itemprop="articleBody"><p>Article content</p></div>';
 
         //Act
         $parseArray = newsItemParse::parseNewsML($xml);
@@ -906,7 +906,7 @@ class newsitemParseTest extends PHPUnit_Framework_TestCase {
                         </contentSet>
                     </newsItem>';
 
-        $post_contentCorrect = "Content";
+        $post_contentCorrect = "<body.content>Content</body.content>";
 
         //Act
         $parseArray = newsitemParse::parseNewsML($xml);
@@ -924,7 +924,7 @@ class newsitemParseTest extends PHPUnit_Framework_TestCase {
                         </contentSet>
                     </newsItem>';
 
-        $post_contentCorrect = "Content";
+        $post_contentCorrect = "<inlineData>Content</inlineData>";
 
         //Act
         $parseArray = newsitemParse::parseNewsML($xml);

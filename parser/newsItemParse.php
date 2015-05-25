@@ -206,26 +206,25 @@ class NewsItemParse {
      * @author Petter Lundberg Olsen
      */
     private static function createXpath($xml) {
-        global $_ns, $_xpath;
+        global $_ns, $_xpath, $doc;
         $doc = new DOMDocument();
 
-
         // Suppression hack
-        set_error_handler(function() { /* ignore errors */ });
-        try{
-            $xml = ltrim($xml);
-            if(is_file($xml)) {    //Checks if $file is file or text
-                $doc->load($xml);
-            }
-            else {
-                $doc->loadXML($xml);
-            }
-        }catch(Exception $e){
+        set_error_handler(function () { /* ignore errors */
+        });
+        if (simplexml_load_string($xml) === false) {
             restore_error_handler();
-            return null;
+            throw new Exception("\r\nInput is not valid xml");
         }
-        restore_error_handler();
 
+        $xml = ltrim($xml);
+        if (is_file($xml)) {    //Checks if $file is file or text
+            $doc->load($xml);
+        } else {
+            $doc->loadXML($xml);
+        }
+
+        restore_error_handler();
 
 
         //Finds the namespace of the outermost tag in the xml file
@@ -280,7 +279,7 @@ class NewsItemParse {
      * @author Petter Lundberg Olsen
      */
     private static function getPostContent($newsItem) {
-        global $_ns, $_xpath;
+        global $_ns, $_xpath, $doc;
         $postContent = null;
 
         /*Query path that continues from first query at the start of the document.
@@ -315,34 +314,11 @@ class NewsItemParse {
             $postContent = $_xpath->query($_ns . "contentSet/" . $_ns . "inlineData", $newsItem)->item(0);
         }
 
-
-        $postContent = self::get_inner_html($postContent);
+        if ($postContent != null) {
+            $postContent = $doc->saveHTML($postContent);
+        }
 
         return $postContent;
-    }
-
-    /**
-     * Gets the inner html tags in a DOMNode
-     *
-     * This function takes a DOMNode and makes sure that the node value contains the original html/xml tags
-     * that woad otherwise be removed.
-     * Attribution:
-     * From php manual comment 101243, http://php.net/manual/en/class.domelement.php#101243
-     *
-     * @param DOMNode $node
-     * @return string innerHTML, the result from a query containing html tags
-     */
-    private static function get_inner_html($node) {
-        $innerHTML = '';
-        if($node == null){
-            return null;
-        }
-        $children = $node->childNodes;
-        foreach ($children as $child) {
-            $innerHTML .= $child->ownerDocument->saveXML($child);
-        }
-
-        return $innerHTML;
     }
 
     /**
