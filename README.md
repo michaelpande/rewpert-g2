@@ -1,15 +1,15 @@
-# What does it do? #
+# What does Rewpert-G2 do? #
 
-This is a WordPress Plugin that makes it possible to send NewsML-G2 XML via HTTP POST Requests to WordPress.
+Rewpert is a WordPress Plugin that makes it possible to send NewsML-G2 XML via HTTP POST Requests to WordPress.
 
 
 
 # Documentation #
-[Documentation](http://demo-nmlg2wp.rhcloud.com/documentation.php)                  
-[Official site](http://demo-nmlg2wp.rhcloud.com/)
+[Documentation](http://www.rewpert.net/documentation.php)                  
+[Official site](http://www.rewpert.net/)
 
 # Online demo #
-[Demo](http://demo-nmlg2wp.rhcloud.com/wp)
+[Demo](http://www.rewpert.net/wp)
 
 
 # How to use #
@@ -17,7 +17,7 @@ This is a WordPress Plugin that makes it possible to send NewsML-G2 XML via HTTP
 1. Install WordPress
 2. Put all the contents in a folder wordpress/wp-content/plugins/[FOLDER-NAME]
 3. Go to the WordPress admin panel and open the plugins page to activate plugin.
-4. Get your REST API URL from WordPress Admin Panel -> Posts  -> NewsML-G2 REST API (Submenu)
+4. Get your REST API URL from WordPress Admin Panel -> Posts  -> Rewpert-G2 (Submenu)
 
 
 
@@ -33,4 +33,4 @@ SQLite PDO
 
 **Michael Pande** michaepande@gmail.com                     
 **Petter Lundberg Olsen** petterl93@hotmail.com                   
-** Diego A. Pasten Bahamondes** diego.pasten@gmail.com
+**Diego A. Pasten Bahamondes** diego.pasten@gmail.com
